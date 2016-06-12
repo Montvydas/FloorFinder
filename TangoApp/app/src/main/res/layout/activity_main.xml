@@ -27,20 +27,20 @@
                 android:layout_height="wrap_content"
                 android:text="Current Altitude:"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp" />
+                android:layout_marginTop="10dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Altitude Difference:"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp" />
+                android:layout_marginTop="10dp" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Current Pressure:"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp" />
+                android:layout_marginTop="10dp" />
         </LinearLayout>
 
         <LinearLayout
@@ -55,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:text="0 m"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp" />
+                android:layout_marginTop="10dp" />
 
             <TextView
                 android:id="@+id/altitudeDifferenceText"
@@ -63,14 +63,14 @@
                 android:layout_height="wrap_content"
                 android:text="0 m"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp" />
+                android:layout_marginTop="10dp" />
             <TextView
                 android:id="@+id/currentPressureText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0 mbar"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp" />
+                android:layout_marginTop="10dp" />
 
         </LinearLayout>
     </LinearLayout>
@@ -79,33 +79,103 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:weightSum="2">
+        android:weightSum="2"
+        android:layout_marginTop="10dp">
 
-        <Button
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="1st Point"
-            android:background="#991F39"
-            android:textColor="#FFFFFF"
-            android:id="@+id/firstPointButton"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp"
-            android:onClick="getPoints"
             android:layout_weight="1"
-            android:layout_marginRight="10dp"/>
-        <Button
-            android:layout_width="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="10dp"
+            android:weightSum="2">
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1st Point"
+                android:background="#991F39"
+                android:textColor="#FFFFFF"
+                android:id="@+id/firstPointButton"
+                android:onClick="getPoints"
+                android:layout_weight="1"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"/>
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2nd Point"
+                android:onClick="getPoints"
+                android:background="#991F39"
+                android:textColor="#FFFFFF"
+                android:id="@+id/secondPointButton"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_weight="1"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="2nd Point"
-            android:onClick="getPoints"
-            android:background="#991F39"
-            android:textColor="#FFFFFF"
-            android:id="@+id/secondPointButton"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp"
             android:layout_weight="1"
-            android:layout_marginLeft="10dp"/>
+            android:orientation="horizontal"
+            android:paddingTop="10dp"
+            android:weightSum="2">
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-All"
+                android:onClick="removeAllLocations"
+                android:background="#1965AE"
+                android:textColor="#FFFFFF"
+                android:id="@+id/removeAllButotn"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"/>
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Export"
+                android:onClick="exportLocations"
+                android:background="#1965AE"
+                android:textColor="#FFFFFF"
+                android:id="@+id/exportLocationsButton"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:layout_marginLeft="5dp"/>
+        </LinearLayout>
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="4"
+        android:layout_marginTop="10dp">
 
+        <EditText
+            android:id="@+id/currentLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp"
+            android:layout_gravity="center"
+            android:layout_marginRight="10dp"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="+LOC"
+            android:onClick="addLocation"
+            android:background="#1965AE"
+            android:textColor="#FFFFFF"
+            android:id="@+id/addLocationButton"
+            android:gravity="center"
+            android:layout_weight="3"
+            android:layout_marginLeft="5dp"/>
+    </LinearLayout>
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/locationList">
+
+    </ListView>
 </LinearLayout>
