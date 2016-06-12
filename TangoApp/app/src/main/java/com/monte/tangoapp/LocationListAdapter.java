@@ -14,9 +14,6 @@ import java.util.List;
  * Created by monty on 12/06/2016.
  */
 public class LocationListAdapter extends BaseAdapter{
-//    private String[] location;
-//    private String[] altitude;
-//    private String[] pressure;
     private List location;
     private List altitude;
     private List pressure;

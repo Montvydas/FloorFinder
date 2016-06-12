@@ -1,7 +1,6 @@
 package com.monte.tangoapp;
 
 import android.Manifest;
-import android.app.LauncherActivity;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -9,8 +8,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.os.Environment;
-import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -26,6 +25,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.monte.tangoapp.model.Weather;
+
+import org.json.JSONException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -34,12 +37,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Objects;
 
 import static android.hardware.SensorManager.getAltitude;
 
+//*** need to request permissions to access the internet
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener, ListView.OnItemLongClickListener{
     private final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
+    private final int MY_PERMISSIONS_REQUEST_ACCESS_INTERNET = 2;
 
     private SensorManager sensorManager;
     private Sensor pressureSensor;
@@ -57,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     List displayTextList = new ArrayList();
 
-
     private LocationListAdapter customLocationListAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +70,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         initialiseSensors();
         addViews();
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.INTERNET},
+                    MY_PERMISSIONS_REQUEST_ACCESS_INTERNET);
+        }
+
+        String city = "Edinburgh,UK";
+        JSONWeatherTask task = new JSONWeatherTask();
+        task.execute(new String[]{city});
     }
 
+    private class JSONWeatherTask extends AsyncTask<String, Void, Weather> {
+
+        @Override
+        protected Weather doInBackground(String... params) {
+            Weather weather = new Weather();
+            String data = ((new WeatherHttpClient()).getWeatherData(params[0]));
+            Log.e("Data=", data);
+            try {
+                weather = JSONWeatherParser.getWeather(data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return weather;
+        }
+
+        @Override
+        protected void onPostExecute(Weather weather) {
+            super.onPostExecute(weather);
+            national_pressure_mbar = weather.getPressure();
+            Toast.makeText(getApplicationContext(), "Pressure in Edinburgh at sea level is " + national_pressure_mbar + " mbar", Toast.LENGTH_LONG).show();
+            Log.e("Edinburgh Pressure:", national_pressure_mbar + "");
+        }
+    }
+
+    private float national_pressure_mbar = 0;
     public void initialiseSensors (){
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         pressureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
@@ -75,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Toast.makeText(this, "Phone doesn't have Pressure sensor", Toast.LENGTH_SHORT).show();// Success! There's a pressure sensor.
             try {
                 Thread.sleep(1000);
+                finish();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -114,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case Sensor.TYPE_PRESSURE:
                 millibars_of_pressure = event.values[0];
 //                Log.e("Pressure is", "" + millibars_of_pressure);
-                float altitude = getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, millibars_of_pressure);
+                float altitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
                 currentAltitudeText.setText(String.format("%.3f m", altitude));
                 currentPressureText.setText(String.format("%.3f mbar", millibars_of_pressure ));
                 break;
@@ -320,6 +362,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                } else {
+                }
+                return;
+            }
+            case MY_PERMISSIONS_REQUEST_ACCESS_INTERNET: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
