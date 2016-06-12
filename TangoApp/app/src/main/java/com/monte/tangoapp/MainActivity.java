@@ -17,6 +17,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -70,18 +72,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         initialiseSensors();
         addViews();
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.INTERNET},
-                    MY_PERMISSIONS_REQUEST_ACCESS_INTERNET);
-        }
-
-        String city = "Edinburgh,UK";
-        JSONWeatherTask task = new JSONWeatherTask();
-        task.execute(new String[]{city});
     }
 
     private class JSONWeatherTask extends AsyncTask<String, Void, Weather> {
@@ -108,7 +98,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    private float national_pressure_mbar = 0;
     public void initialiseSensors (){
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         pressureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
@@ -165,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float millibars_of_pressure;
     private float firstPointAltitude = 0.0f;
     private float secondPointAltitude= 0.0f;
+    private float national_pressure_mbar = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
 
     public void getPoints (View view){
         switch (view.getId()){
@@ -378,5 +368,37 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 return;
             }
         }
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_refresh) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.INTERNET)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.INTERNET},
+                        MY_PERMISSIONS_REQUEST_ACCESS_INTERNET);
+            } else {
+                String city = "Edinburgh,UK";
+                JSONWeatherTask task = new JSONWeatherTask();
+                task.execute(new String[]{city});
+            }
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
