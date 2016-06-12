@@ -38,7 +38,7 @@ public class JSONWeatherParser {
         JSONObject jObj = new JSONObject(data);
 
         JSONObject mainObj = getObject("main", jObj);
-        weather.setPressure(getInt("sea_level", mainObj));
+        weather.setPressure(getFloat("sea_level", mainObj));
         return weather;
     }
 
@@ -56,8 +56,8 @@ public class JSONWeatherParser {
         return (float) jObj.getDouble(tagName);
     }
 
-    private static int  getInt(String tagName, JSONObject jObj) throws JSONException {
-        return jObj.getInt(tagName);
-    }
+//    private static int  getInt(String tagName, JSONObject jObj) throws JSONException {
+//        return jObj.getInt(tagName);
+//    }
 
 }

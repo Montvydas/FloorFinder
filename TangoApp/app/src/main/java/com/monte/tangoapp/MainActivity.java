@@ -58,11 +58,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private ArrayAdapter locationListAdapter;
 //    private List locationList;
 
-    List altitudeList = new ArrayList();
-    List locationList = new ArrayList();
-    List pressureList = new ArrayList();
+    private List altitudeList = new ArrayList();
+    private List locationList = new ArrayList();
+    private List pressureList = new ArrayList();
 
-    List displayTextList = new ArrayList();
+    private List displayTextList = new ArrayList();
 
     private LocationListAdapter customLocationListAdapter;
     @Override
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         protected void onPostExecute(Weather weather) {
             super.onPostExecute(weather);
             national_pressure_mbar = weather.getPressure();
-            Toast.makeText(getApplicationContext(), "Pressure in Edinburgh at sea level is " + national_pressure_mbar + " mbar", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Sea level pressure in Edinburgh is " + national_pressure_mbar + " mbar", Toast.LENGTH_LONG).show();
             Log.e("Edinburgh Pressure:", national_pressure_mbar + "");
         }
     }
@@ -172,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+    private int elementIndex = 0;
     public void addLocation (View view){
         if (currentLocation.getText().toString().isEmpty()) {
             Toast.makeText(this, "Add location name", Toast.LENGTH_SHORT).show();
@@ -189,7 +190,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         pressureList.add(String.format("%.3f", millibars_of_pressure));
         altitudeList.add(String.format("%.3f", altitude));
 
-        locationListAdapter.add(currentLocation.getText().toString()
+        elementIndex++;
+        locationListAdapter.add(elementIndex + ". " + currentLocation.getText().toString()
                 + String.format("  %.3f mbar ", millibars_of_pressure)
                 + String.format(" %.3f m", altitude));
         locationListAdapter.notifyDataSetChanged();
