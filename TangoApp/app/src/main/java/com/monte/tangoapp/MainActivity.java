@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
 
-        float altitude = getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, millibars_of_pressure);
+        float altitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
 //        customLocationListAdapter.add(currentLocation.getText().toString(),
 //                String.format(" %.3f m", millibars_of_pressure),
 //                String.format(" %.3f m", altitude));
@@ -276,12 +276,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Here, thisActivity is the current activity
 
         String dataString = new String();
+        String sea_level_pressure = String.format("%.2f", national_pressure_mbar);
         for (int i = 0; i < locationList.size(); i++){
-            dataString += "\"" +  locationList.get(i) +"\",\"" + pressureList.get(i) + "\",\"" + altitudeList.get(i) + "\"\n";
+            dataString += "\"" +  locationList.get(i) +"\",\"" + pressureList.get(i) + "\",\"" + sea_level_pressure + "\",\"" + altitudeList.get(i) + "\"\n";
         }
 
 
-        String columnString =   "\"Location\",\"Pressure (mbar)\",\"Altitude (m)\"";
+        String columnString =   "\"Location\",\"Pressure (hPa)\",\"Sea Level Pressure(hPa)\",\"Altitude (m)\"";
         String combinedString = columnString + "\n" + dataString;
 
         Log.e("locations", combinedString);
