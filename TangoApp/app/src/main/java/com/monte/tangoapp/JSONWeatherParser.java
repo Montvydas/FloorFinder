@@ -37,8 +37,16 @@ public class JSONWeatherParser {
         Weather weather = new Weather();
         JSONObject jObj = new JSONObject(data);
 
+//        JSONObject dtObj = getObject("dt", jObj);
+
+        weather.setUnixTime(getFloat("dt", jObj));
+
         JSONObject mainObj = getObject("main", jObj);
-        weather.setPressure(getFloat("sea_level", mainObj));
+        weather.setPressure(getFloat("pressure", mainObj));
+        weather.setTemperature(getFloat("temp", mainObj));
+        weather.setHumidity(getFloat("humidity", mainObj));
+        weather.setPressureSeaLevel(getFloat("sea_level", mainObj));
+
         return weather;
     }
 

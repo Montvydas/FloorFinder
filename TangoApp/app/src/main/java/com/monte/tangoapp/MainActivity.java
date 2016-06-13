@@ -89,11 +89,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             return weather;
         }
 
+        private float local_temperature = 273.0f;
+        private float local_relative_humidity = 90.0f;
+        private float unixTime = 0.0f;
+
         @Override
         protected void onPostExecute(Weather weather) {
             super.onPostExecute(weather);
             national_pressure_mbar = weather.getPressure();
-            Toast.makeText(getApplicationContext(), "Sea level pressure in Edinburgh is " + national_pressure_mbar + " mbar", Toast.LENGTH_LONG).show();
+            local_temperature = weather.getTemperature();
+            local_relative_humidity = weather.getHumidity();
+            unixTime = weather.getUnixTime();
+            Toast.makeText(getApplicationContext(), "Sea level pressure: " + national_pressure_mbar
+                    + " hPa\nTemperature: " + local_temperature + " K\nhumidity: "
+                    + local_relative_humidity +" %\nUnix Time: " + unixTime, Toast.LENGTH_SHORT).show();
             Log.e("Edinburgh Pressure:", national_pressure_mbar + "");
         }
     }
@@ -159,12 +168,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void getPoints (View view){
         switch (view.getId()){
             case R.id.firstPointButton:
-                firstPointAltitude = getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, millibars_of_pressure);
+                firstPointAltitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
                 altitudeDifferenceText.setText("0 m");
                 Toast.makeText(this, "1st Point " + String.format("%.3f m", firstPointAltitude), Toast.LENGTH_SHORT).show();
                 break;
             case R.id.secondPointButton:
-                secondPointAltitude = getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, millibars_of_pressure);
+                secondPointAltitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
                 Toast.makeText(this, "2nd Point " + String.format("%.3f m", firstPointAltitude), Toast.LENGTH_SHORT).show();
                 float diff = secondPointAltitude - firstPointAltitude;
                 altitudeDifferenceText.setText(String.format("%.3f m", diff));
