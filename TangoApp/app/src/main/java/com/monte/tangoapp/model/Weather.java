@@ -5,12 +5,12 @@ public class Weather {
     private float humidity;
     private float temperature;
     private float pressureSeaLevel;
-    private float unixTime;
+    private String unixTime;
 
-    public float getUnixTime() {
+    public String getUnixTime() {
         return unixTime;
     }
-    public void setUnixTime(float unixTime) {
+    public void setUnixTime(String unixTime) {
         this.unixTime = unixTime;
     }
     public float getPressureSeaLevel() {

@@ -89,21 +89,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             return weather;
         }
 
-        private float local_temperature = 273.0f;
-        private float local_relative_humidity = 90.0f;
-        private float unixTime = 0.0f;
-
         @Override
         protected void onPostExecute(Weather weather) {
             super.onPostExecute(weather);
-            national_pressure_mbar = weather.getPressure();
+            local_sea_level_pressure = weather.getPressureSeaLevel();
             local_temperature = weather.getTemperature();
             local_relative_humidity = weather.getHumidity();
-            unixTime = weather.getUnixTime();
-            Toast.makeText(getApplicationContext(), "Sea level pressure: " + national_pressure_mbar
-                    + " hPa\nTemperature: " + local_temperature + " K\nhumidity: "
-                    + local_relative_humidity +" %\nUnix Time: " + unixTime, Toast.LENGTH_SHORT).show();
-            Log.e("Edinburgh Pressure:", national_pressure_mbar + "");
+            local_pressure = weather.getPressure();
+            unix_time = weather.getUnixTime();
+            Toast.makeText(getApplicationContext(), "Sea level pressure: " + local_sea_level_pressure
+                    + " hPa\nLocal pressure: " + local_pressure
+                    + " hPa\nTemperature: " + local_temperature
+                    + " K\nHumidity: " + local_relative_humidity
+                    +" %\nUnix Time: " + unix_time, Toast.LENGTH_SHORT).show();
+            Log.e("Edinburgh Pressure:", local_sea_level_pressure + "");
         }
     }
 
@@ -139,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
-        sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_GAME);
     }
 
     @Override
@@ -154,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case Sensor.TYPE_PRESSURE:
                 millibars_of_pressure = event.values[0];
 //                Log.e("Pressure is", "" + millibars_of_pressure);
-                float altitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
+                float altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
                 currentAltitudeText.setText(String.format("%.3f m", altitude));
                 currentPressureText.setText(String.format("%.3f mbar", millibars_of_pressure ));
                 break;
@@ -163,17 +162,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float millibars_of_pressure;
     private float firstPointAltitude = 0.0f;
     private float secondPointAltitude= 0.0f;
-    private float national_pressure_mbar = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
+    private float local_sea_level_pressure = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
 
     public void getPoints (View view){
         switch (view.getId()){
             case R.id.firstPointButton:
-                firstPointAltitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
+                firstPointAltitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
                 altitudeDifferenceText.setText("0 m");
                 Toast.makeText(this, "1st Point " + String.format("%.3f m", firstPointAltitude), Toast.LENGTH_SHORT).show();
                 break;
             case R.id.secondPointButton:
-                secondPointAltitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
+                secondPointAltitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
                 Toast.makeText(this, "2nd Point " + String.format("%.3f m", firstPointAltitude), Toast.LENGTH_SHORT).show();
                 float diff = secondPointAltitude - firstPointAltitude;
                 altitudeDifferenceText.setText(String.format("%.3f m", diff));
@@ -189,7 +188,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
 
-        float altitude = getAltitude(national_pressure_mbar, millibars_of_pressure);
+        float altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
 //        customLocationListAdapter.add(currentLocation.getText().toString(),
 //                String.format(" %.3f m", millibars_of_pressure),
 //                String.format(" %.3f m", altitude));
@@ -281,17 +280,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
+    private float local_temperature = 273.0f;
+    private float local_relative_humidity = 90.0f;
+    private String unix_time = new String();
+    private float local_pressure = 0.0f;
+
     private void exportToFile (String folderName){
         // Here, thisActivity is the current activity
 
         String dataString = new String();
-        String sea_level_pressure = String.format("%.2f", national_pressure_mbar);
+//        String sea_level_pressure = String.format("%.2f", local_sea_level_pressure);
         for (int i = 0; i < locationList.size(); i++){
-            dataString += "\"" +  locationList.get(i) +"\",\"" + pressureList.get(i) + "\",\"" + sea_level_pressure + "\",\"" + altitudeList.get(i) + "\"\n";
+            dataString += "\"" +  locationList.get(i) +"\",\"" + pressureList.get(i)
+                    + "\",\"" + local_pressure + "\",\"" + local_sea_level_pressure
+                    + "\",\"" + local_temperature + "\",\"" + local_relative_humidity
+                    + "\",\"" + unix_time + "\",\"" + altitudeList.get(i) + "\"\n";
         }
 
 
-        String columnString =   "\"Location\",\"Pressure (hPa)\",\"Sea Level Pressure(hPa)\",\"Altitude (m)\"";
+        String columnString =   "\"Location\",\"Barometer results (hPa)\",\"Local pressure (hPa)\",\"Sea Level Pressure(hPa)\",\"Temperature (K)\",\"Humidity (%)\",\"Station updating Time (Unix)\",\"Altitude (m)\"";
         String combinedString = columnString + "\n" + dataString;
 
         Log.e("locations", combinedString);

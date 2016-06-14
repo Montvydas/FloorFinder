@@ -39,7 +39,7 @@ public class JSONWeatherParser {
 
 //        JSONObject dtObj = getObject("dt", jObj);
 
-        weather.setUnixTime(getFloat("dt", jObj));
+        weather.setUnixTime(getString("dt", jObj));
 
         JSONObject mainObj = getObject("main", jObj);
         weather.setPressure(getFloat("pressure", mainObj));
