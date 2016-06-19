@@ -13,12 +13,10 @@ public class HttpClientQuery {
         HttpURLConnection httpConnection = null ;
         InputStream inputStream = null;
 
-        Log.e("httpClientQuery", "trying!!!");
+        System.out.println(UrlAddress);
         try {
             httpConnection = (HttpURLConnection) ( new URL(UrlAddress)).openConnection();
             httpConnection.setRequestMethod("GET");
-            httpConnection.setDoInput(true);
-            httpConnection.setDoOutput(true);
             httpConnection.connect();
 
             StringBuffer buffer = new StringBuffer();

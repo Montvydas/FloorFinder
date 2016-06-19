@@ -35,8 +35,9 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.server.converter.StringToIntConverter;
 import com.google.android.gms.location.LocationServices;
+
+import com.monte.tangoapp.model.Elevation;
 import com.monte.tangoapp.model.Weather;
 
 import org.json.JSONException;
@@ -49,6 +50,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static android.hardware.SensorManager.getAltitude;
 
@@ -56,7 +58,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
-    private final String base = "https://maps.googleapis.com/maps/api/elevation/json?locations=39.7391536,-104.9847034";
     private final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
     private final int MY_PERMISSIONS_REQUEST_ACCESS_INTERNET = 2;
     private final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 3;
@@ -69,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private String API_KEY_GOOGLE_ELEVATION = "***REMOVED***";
 
     private String BASE_URL_FORECAST = "https://api.forecast.io/forecast/";
-    private String API_KEY_FORECAST = "***REMOVED*** ";
+    private String API_KEY_FORECAST = "***REMOVED***";
 
     private double lat = 39.7391536;
     private double lon = -104.9847034;
@@ -82,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView altitudeDifferenceText;
     private EditText currentLocation;
     private ArrayAdapter locationListAdapter;
+    private TextView currentGoogleAltitudeText;
 //    private List locationList;
 
     //Location stuff
@@ -107,7 +109,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         initialiseLocationProvider();
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+        }
     }
 
     private void initialiseLocationProvider() {
@@ -120,15 +128,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                     MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
-        }
+        } else {
 
-        // Create an instance of GoogleAPIClient.
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
+            // Create an instance of GoogleAPIClient.
+            if (mGoogleApiClient == null) {
+                mGoogleApiClient = new GoogleApiClient.Builder(this)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(LocationServices.API)
+                        .build();
+            }
         }
 //
 //        // initialisation of location manager is created here
@@ -179,42 +188,58 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    private class JSONTask extends AsyncTask<String, Void, String> {
-
+    private class JSONElevationTask extends AsyncTask<String, Void, Elevation> {
         @Override
-        protected String doInBackground(String... params) {
-            Weather weather = new Weather();
+        protected Elevation doInBackground(String... params) {
             String data = ((new HttpClientQuery()).getQueryResult(params[0]));
-//            Log.e("Data=", data);
-            /*
+            Elevation elevation = new Elevation();
             try {
-//                weather = JSONWeatherParser.getWeather(data);
+                elevation = JSONParser.getGoogleElevationResults(data);
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            */
-            return data;
-
+            return elevation;
         }
 
         @Override
-        protected void onPostExecute(String weather) {
+        protected void onPostExecute(Elevation elevation) {
+            super.onPostExecute(elevation);
+            String altitude = String.format("%.2f m", elevation.getAltitude());
+            currentGoogleAltitudeText.setText(altitude);
+            Log.e("Altitude:", elevation.getAltitude() + " m");
+        }
+    }
+
+    private class JSONTaskWeather extends AsyncTask<String, Void, Weather> {
+
+        @Override
+        protected Weather doInBackground(String... params) {
+            Weather weather = new Weather();
+            String data = ((new HttpClientQuery()).getQueryResult(params[0]));
+            Log.e("Data=", data);
+            try {
+                weather = JSONParser.getForecastWeather(data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return weather;
+        }
+
+        @Override
+        protected void onPostExecute(Weather weather) {
             super.onPostExecute(weather);
 
-            if (weather == null)
-                return;
-            Toast.makeText(getApplicationContext(), weather, Toast.LENGTH_LONG);
-//            local_sea_level_pressure = weather.getPressureSeaLevel();
-//            local_temperature = weather.getTemperature();
-//            local_relative_humidity = weather.getHumidity();
-//            local_pressure = weather.getPressure();
-//            unix_time = weather.getUnixTime();
-//            Toast.makeText(getApplicationContext(), "Sea level pressure: " + local_sea_level_pressure
-//                    + " hPa\nLocal pressure: " + local_pressure
-//                    + " hPa\nTemperature: " + local_temperature
-//                    + " K\nHumidity: " + local_relative_humidity
-//                    +" %\nUnix Time: " + unix_time, Toast.LENGTH_SHORT).show();
-//            Log.e("Edinburgh Pressure:", local_sea_level_pressure + "");
+//            Toast.makeText(getApplicationContext(), "Query Done!", Toast.LENGTH_LONG);
+            local_sea_level_pressure = weather.getPressureSeaLevel();
+            local_temperature = weather.getTemperature();
+            local_relative_humidity = weather.getHumidity();
+            unix_time = weather.getUnixTime();
+
+            Toast.makeText(getApplicationContext(), "Sea level pressure: " + local_sea_level_pressure
+                    + " hPa\nTemperature: " + local_temperature
+                    + " K\nHumidity: " + local_relative_humidity
+                    +" %\nUnix Time: " + unix_time, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -237,6 +262,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         currentAltitudeText = (TextView) findViewById(R.id.currentAltitudeText);
         altitudeDifferenceText = (TextView) findViewById(R.id.altitudeDifferenceText);
         currentLocation = (EditText) findViewById(R.id.currentLocation);
+        currentGoogleAltitudeText = (TextView) findViewById(R.id.currentGoogleAltitudeText);
 
         locationListAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_expandable_list_item_1,displayTextList);
         ListView locationListView = (ListView) findViewById(R.id.locationList);
@@ -246,7 +272,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onStart() {
-        mGoogleApiClient.connect();
+        if (mGoogleApiClient != null)
+            mGoogleApiClient.connect();
         super.onStart();
     }
 
@@ -264,7 +291,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onStop() {
-        mGoogleApiClient.disconnect();
+        if (mGoogleApiClient != null)
+            mGoogleApiClient.disconnect();
         super.onStop();
     }
 
@@ -359,41 +387,39 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
-        }
+        } else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Enter Folder Name");
 
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Enter Folder Name");
-
-        // Set up the input
-        final EditText folderLocation = new EditText(this);
+            // Set up the input
+            final EditText folderLocation = new EditText(this);
 // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-        folderLocation.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(folderLocation);
+            folderLocation.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(folderLocation);
 
 
 // Set up the buttons
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                exportToFile (folderLocation.getText().toString());
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    exportToFile (folderLocation.getText().toString());
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
 //                dialog.dismiss();
-            }
-        });
+                }
+            });
 
-        builder.show();
-
+            builder.show();
+        }
     }
 
     private float local_temperature = 273.0f;
     private float local_relative_humidity = 90.0f;
-    private String unix_time = new String();
+    private long unix_time = 0;
     private float local_pressure = 0.0f;
 
     private void exportToFile (String folderName){
@@ -518,16 +544,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    private String getOpenWeatherMapUrl (String baseAddress, String apiKey, double lat, double lon){
-        return baseAddress + "lat=" + lat + "lon=" + lon + "&APPID=" + apiKey;
+    private String [] getOpenWeatherMapUrl (String baseAddress, String apiKey, double lat, double lon){
+        return new String[]{baseAddress + "lat=" + lat + "&lon=" + lon + "&APPID=" + apiKey};
+
     }
 
-    private String getGoogleElevationUrl (String baseAddress, String apiKey, double lat, double lon){
-        return baseAddress + "locations=" + lat + "," + lon + "&key=" + apiKey;
+    private String[] getGoogleElevationUrl (String baseAddress, String apiKey, double lat, double lon){
+        return new String[] {baseAddress + "locations=" + lat + "," + lon + "&key=" + apiKey};
     }
 
-    private String getForecastUrl (String baseAddress, String apiKey, double lat, double lon){
-        return baseAddress + "/" + apiKey + "/" + lat + "," + lon;
+    private String [] getForecastUrl (String baseAddress, String apiKey, double lat, double lon){
+        return new String[] {baseAddress + apiKey + "/" + lat + "," + lon + "?units=si&exclude=minutely,hourly,daily,alerts,flags"};
     }
 
     @Override
@@ -553,18 +580,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         MY_PERMISSIONS_REQUEST_ACCESS_INTERNET);
             } else {
 //                String city = "Edinburgh,UK";
-                JSONTask openWeatherMapTask = new JSONTask();
-                openWeatherMapTask.execute("api.openweathermap.org/data/2.5/weather?q=London,uk&APPID=***REMOVED***");
+//                JSONTask openWeatherMapTask = new JSONTask();
+//                openWeatherMapTask.execute(city)
+//                openWeatherMapTask.execute("api.openweathermap.org/data/2.5/weather?q=Edinburgh&APPID=***REMOVED***");
 //                openWeatherMapTask.execute(getOpenWeatherMapUrl(BASE_URL_OPEN_WEATHER_MAP, API_KEY_OPEN_WEATHER_MAP, lat, lon));
 
-//                JSONTask googleElevationTask = new JSONTask();
-//                googleElevationTask.execute(getGoogleElevationUrl(BASE_URL_GOOGLE_ELEVATION, API_KEY_GOOGLE_ELEVATION, lat, lon));
+                JSONElevationTask googleElevationTask = new JSONElevationTask();
+                googleElevationTask.execute(getGoogleElevationUrl(BASE_URL_GOOGLE_ELEVATION, API_KEY_GOOGLE_ELEVATION, lat, lon));
 
-//                JSONTask forecastTask = new JSONTask();
-//                forecastTask.execute(getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon));
+                JSONTaskWeather forecastTask = new JSONTaskWeather();
+                forecastTask.execute(getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon));
             }
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private java.util.Date getFromUnixTime (int timeStamp){
+//        long unixSeconds = 1372339860;
+//        Date date = new Date(unixSeconds*1000L); // *1000 is to convert seconds to milliseconds
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z"); // the format of your date
+//        sdf.setTimeZone(TimeZone.getTimeZone("GMT-4")); // give a timezone reference for formating (see comment at the bottom
+//        String formattedDate = sdf.format(date);
+//        System.out.println(formattedDate);
+        java.util.Date time=new java.util.Date((long)timeStamp*1000);
+        return time;
     }
 }

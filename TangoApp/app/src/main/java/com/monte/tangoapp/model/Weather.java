@@ -1,36 +1,30 @@
 package com.monte.tangoapp.model;
 
 public class Weather {
-    private float pressure;
     private float humidity;
     private float temperature;
-    private float pressureSeaLevel;
-    private String unixTime;
+    private float pressureSea;
+    private long unixTime;
 
-    public String getUnixTime() {
+    public long getUnixTime() {
         return unixTime;
     }
-    public void setUnixTime(String unixTime) {
+    public void setUnixTime(long unixTime) {
         this.unixTime = unixTime;
     }
     public float getPressureSeaLevel() {
-        return pressureSeaLevel;
+        return pressureSea;
     }
-    public void setPressureSeaLevel(float pressureSeaLevel) {
-        this.pressureSeaLevel = pressureSeaLevel;
+    public void setPressureSea(float pressureSea) {
+        this.pressureSea = pressureSea;
     }
+
     public float getTemperature() {
         return temperature;
     }
     public void setTemperature(float temperature) {
         this.temperature = temperature;
     }
-    public float getPressure() {
-            return pressure;
-        }
-    public void setPressure(float pressure) {
-            this.pressure = pressure;
-        }
     public float getHumidity() {
             return humidity;
         }
