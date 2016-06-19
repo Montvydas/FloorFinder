@@ -37,8 +37,6 @@ public class JSONWeatherParser {
         Weather weather = new Weather();
         JSONObject jObj = new JSONObject(data);
 
-//        JSONObject dtObj = getObject("dt", jObj);
-
         weather.setUnixTime(getString("dt", jObj));
 
         JSONObject mainObj = getObject("main", jObj);
@@ -64,8 +62,8 @@ public class JSONWeatherParser {
         return (float) jObj.getDouble(tagName);
     }
 
-//    private static int  getInt(String tagName, JSONObject jObj) throws JSONException {
-//        return jObj.getInt(tagName);
-//    }
+    private static int  getInt(String tagName, JSONObject jObj) throws JSONException {
+        return jObj.getInt(tagName);
+    }
 
 }
