@@ -35,6 +35,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.server.converter.StringToIntConverter;
 import com.google.android.gms.location.LocationServices;
 import com.monte.tangoapp.model.Weather;
 
@@ -178,13 +179,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    private class JSONTask extends AsyncTask<String, Void, Weather> {
+    private class JSONTask extends AsyncTask<String, Void, String> {
 
         @Override
-        protected Weather doInBackground(String... params) {
+        protected String doInBackground(String... params) {
             Weather weather = new Weather();
             String data = ((new HttpClientQuery()).getQueryResult(params[0]));
-            Log.e("Data=", data);
+//            Log.e("Data=", data);
             /*
             try {
 //                weather = JSONWeatherParser.getWeather(data);
@@ -192,16 +193,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 e.printStackTrace();
             }
             */
-            return weather;
+            return data;
 
         }
 
         @Override
-        protected void onPostExecute(Weather weather) {
+        protected void onPostExecute(String weather) {
             super.onPostExecute(weather);
 
             if (weather == null)
                 return;
+            Toast.makeText(getApplicationContext(), weather, Toast.LENGTH_LONG);
 //            local_sea_level_pressure = weather.getPressureSeaLevel();
 //            local_temperature = weather.getTemperature();
 //            local_relative_humidity = weather.getHumidity();
@@ -552,13 +554,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             } else {
 //                String city = "Edinburgh,UK";
                 JSONTask openWeatherMapTask = new JSONTask();
-                openWeatherMapTask.execute(getOpenWeatherMapUrl(BASE_URL_OPEN_WEATHER_MAP, API_KEY_OPEN_WEATHER_MAP, lat, lon));
+                openWeatherMapTask.execute("api.openweathermap.org/data/2.5/weather?q=London,uk&APPID=***REMOVED***");
+//                openWeatherMapTask.execute(getOpenWeatherMapUrl(BASE_URL_OPEN_WEATHER_MAP, API_KEY_OPEN_WEATHER_MAP, lat, lon));
 
-                JSONTask googleElevationTask = new JSONTask();
-                googleElevationTask.execute(getGoogleElevationUrl(BASE_URL_GOOGLE_ELEVATION, API_KEY_GOOGLE_ELEVATION, lat, lon));
+//                JSONTask googleElevationTask = new JSONTask();
+//                googleElevationTask.execute(getGoogleElevationUrl(BASE_URL_GOOGLE_ELEVATION, API_KEY_GOOGLE_ELEVATION, lat, lon));
 
-                JSONTask forecastTask = new JSONTask();
-                forecastTask.execute(getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon));
+//                JSONTask forecastTask = new JSONTask();
+//                forecastTask.execute(getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon));
             }
             return true;
         }
