@@ -242,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             currentGoogleAltitudeText.setText(alt);
 
             LatLng point = new LatLng(lat, lon);
-            mMap.addMarker(new MarkerOptions().position(point).title(String.format("Google Altitude= %.2f m")));
+            mMap.addMarker(new MarkerOptions().position(point).title(String.format("Google Altitude= %.2f m", googleElevation.getAltitude())));
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 18.5f));
         }
     }
