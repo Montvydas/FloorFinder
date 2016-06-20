@@ -37,6 +37,12 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.monte.tangoapp.model.Elevation;
 import com.monte.tangoapp.model.Weather;
 
@@ -49,14 +55,14 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static android.hardware.SensorManager.getAltitude;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener, ListView.OnItemLongClickListener,
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
 
     private final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
     private final int MY_PERMISSIONS_REQUEST_ACCESS_INTERNET = 2;
@@ -100,6 +106,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private LocationListAdapter customLocationListAdapter;
 
+    private GoogleMap mMap;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -109,13 +116,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         initialiseLocationProvider();
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
-        }
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
     }
 
     private void initialiseLocationProvider() {
@@ -175,6 +178,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Log.e ("Altitude", mLastLocation.getAltitude()+ "");
             Toast.makeText(getApplicationContext(), "Lat= " + (mLastLocation.getLatitude()) +
                     " Long= " + (mLastLocation.getLongitude()), Toast.LENGTH_LONG).show();
+            getQueryData ();
+        }
+
+    }
+
+    private void getQueryData (){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.INTERNET},
+                    MY_PERMISSIONS_REQUEST_ACCESS_INTERNET);
+        } else {
+//                JSONWeatherTask openWeatherMapTask = new JSONWeatherTask();
+//                openWeatherMapTask.execute(getOpenWeatherMapUrl(BASE_URL_OPEN_WEATHER_MAP, API_KEY_OPEN_WEATHER_MAP, lat, lon));
+
+            JSONElevationTask googleElevationTask = new JSONElevationTask();
+            googleElevationTask.execute(getGoogleElevationUrl(BASE_URL_GOOGLE_ELEVATION, API_KEY_GOOGLE_ELEVATION, lat, lon));
+
+            JSONWeatherTask forecastTask = new JSONWeatherTask();
+            forecastTask.execute(getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon));
         }
     }
 
@@ -186,6 +210,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
+    }
+
+
+    private Elevation googleElevation = new Elevation();
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
     }
 
     private class JSONElevationTask extends AsyncTask<String, Void, Elevation> {
@@ -205,19 +237,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         @Override
         protected void onPostExecute(Elevation elevation) {
             super.onPostExecute(elevation);
-            String altitude = String.format("%.2f m", elevation.getAltitude());
-            currentGoogleAltitudeText.setText(altitude);
-            Log.e("Altitude:", elevation.getAltitude() + " m");
+            googleElevation = elevation;
+            String alt = String.format("%.2f m", elevation.getAltitude());
+            currentGoogleAltitudeText.setText(alt);
+
+            LatLng point = new LatLng(lat, lon);
+            mMap.addMarker(new MarkerOptions().position(point).title(String.format("Google Altitude= %.2f m")));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 18.5f));
         }
     }
 
-    private class JSONTaskWeather extends AsyncTask<String, Void, Weather> {
+
+    private Weather forecastWeather = new Weather ();
+    private class JSONWeatherTask extends AsyncTask<String, Void, Weather> {
 
         @Override
         protected Weather doInBackground(String... params) {
             Weather weather = new Weather();
             String data = ((new HttpClientQuery()).getQueryResult(params[0]));
-            Log.e("Data=", data);
             try {
                 weather = JSONParser.getForecastWeather(data);
             } catch (JSONException e) {
@@ -229,17 +266,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         @Override
         protected void onPostExecute(Weather weather) {
             super.onPostExecute(weather);
-
-//            Toast.makeText(getApplicationContext(), "Query Done!", Toast.LENGTH_LONG);
+            forecastWeather = weather;
             local_sea_level_pressure = weather.getPressureSeaLevel();
-            local_temperature = weather.getTemperature();
-            local_relative_humidity = weather.getHumidity();
-            unix_time = weather.getUnixTime();
-
-            Toast.makeText(getApplicationContext(), "Sea level pressure: " + local_sea_level_pressure
-                    + " hPa\nTemperature: " + local_temperature
-                    + " K\nHumidity: " + local_relative_humidity
-                    +" %\nUnix Time: " + unix_time, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Sea level pressure: " + weather.getPressureSeaLevel()
+                    + " hPa\nTemperature: " + weather.getTemperature()
+                    + " K\nHumidity: " + weather.getHumidity()
+                    +" %\nUnix Time: " + getTimeFromUnix( weather.getUnixTime()), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -296,12 +328,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onStop();
     }
 
+    private float altitude = 0.0f;
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()){
             case Sensor.TYPE_PRESSURE:
                 millibars_of_pressure = event.values[0];
-                float altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
+                altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
                 currentAltitudeText.setText(String.format("%.3f m", altitude));
                 currentPressureText.setText(String.format("%.3f mbar", millibars_of_pressure ));
                 break;
@@ -334,9 +367,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Toast.makeText(this, "Add location name", Toast.LENGTH_SHORT).show();
             return;
         }
-
-
-        float altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
 
         locationList.add(currentLocation.getText().toString());
         pressureList.add(String.format("%.3f", millibars_of_pressure));
@@ -417,11 +447,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    private float local_temperature = 273.0f;
-    private float local_relative_humidity = 90.0f;
-    private long unix_time = 0;
-    private float local_pressure = 0.0f;
-
     private void exportToFile (String folderName){
         // Here, thisActivity is the current activity
 
@@ -429,13 +454,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //        String sea_level_pressure = String.format("%.2f", local_sea_level_pressure);
         for (int i = 0; i < locationList.size(); i++){
             dataString += "\"" +  locationList.get(i) +"\",\"" + pressureList.get(i)
-                    + "\",\"" + local_pressure + "\",\"" + local_sea_level_pressure
-                    + "\",\"" + local_temperature + "\",\"" + local_relative_humidity
-                    + "\",\"" + unix_time + "\",\"" + altitudeList.get(i) + "\"\n";
+                    + "\",\"" + forecastWeather.getPressureSeaLevel()
+                    + "\",\"" + forecastWeather.getTemperature() + "\",\"" + forecastWeather.getHumidity()
+                    + "\",\"" + getTimeFromUnix( forecastWeather.getUnixTime() ) + "\",\""+ googleElevation.getAltitude() + "\",\"" + altitudeList.get(i) + "\"\n";
         }
 
 
-        String columnString =   "\"Location\",\"Barometer results (hPa)\",\"Local pressure (hPa)\",\"Sea Level Pressure(hPa)\",\"Temperature (K)\",\"Humidity (%)\",\"Station updating Time (Unix)\",\"Altitude (m)\"";
+        String columnString =   "\"Location\",\"Barometer results (hPa)\",\"Sea Level Pressure(hPa)\",\"Temperature (K)\",\"Humidity (%)\",\"Station updating Time (Unix)\",\"Google Altitude (m)\",\"Altitude (m)\"";
         String combinedString = columnString + "\n" + dataString;
 
         Log.e("locations", combinedString);
@@ -572,38 +597,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_refresh) {
-            if (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.INTERNET)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.INTERNET},
-                        MY_PERMISSIONS_REQUEST_ACCESS_INTERNET);
-            } else {
-//                String city = "Edinburgh,UK";
-//                JSONTask openWeatherMapTask = new JSONTask();
-//                openWeatherMapTask.execute(city)
-//                openWeatherMapTask.execute("api.openweathermap.org/data/2.5/weather?q=Edinburgh&APPID=***REMOVED***");
-//                openWeatherMapTask.execute(getOpenWeatherMapUrl(BASE_URL_OPEN_WEATHER_MAP, API_KEY_OPEN_WEATHER_MAP, lat, lon));
-
-                JSONElevationTask googleElevationTask = new JSONElevationTask();
-                googleElevationTask.execute(getGoogleElevationUrl(BASE_URL_GOOGLE_ELEVATION, API_KEY_GOOGLE_ELEVATION, lat, lon));
-
-                JSONTaskWeather forecastTask = new JSONTaskWeather();
-                forecastTask.execute(getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon));
-            }
+            getQueryData();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private java.util.Date getFromUnixTime (int timeStamp){
+    private String getTimeFromUnix (long timeStamp){
 //        long unixSeconds = 1372339860;
 //        Date date = new Date(unixSeconds*1000L); // *1000 is to convert seconds to milliseconds
-//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z"); // the format of your date
+
 //        sdf.setTimeZone(TimeZone.getTimeZone("GMT-4")); // give a timezone reference for formating (see comment at the bottom
 //        String formattedDate = sdf.format(date);
 //        System.out.println(formattedDate);
-        java.util.Date time=new java.util.Date((long)timeStamp*1000);
-        return time;
+        Date date = new java.util.Date((long)timeStamp*1000);
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // the format of your date
+        String formatterDate = formatter.format(date);
+        return formatterDate;
     }
 }

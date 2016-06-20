@@ -19,7 +19,7 @@ public class JSONParser {
         JSONObject mainObj = getObject("main", jObj);
         weather.setTemperature(getFloat("temp", mainObj));
         weather.setHumidity(getFloat("humidity", mainObj));
-        weather.setPressureSea(getFloat("sea_level", mainObj));
+        weather.setPressureSeaLevel(getFloat("sea_level", mainObj));
 
         return weather;
     }
@@ -32,7 +32,7 @@ public class JSONParser {
         weather.setUnixTime(getLong("time", currentlyObj));
         weather.setTemperature(getFloat("temperature", currentlyObj)+273.15f);  //Absolute temperature
         weather.setHumidity(getFloat("humidity", currentlyObj) * 100);
-        weather.setPressureSea(getFloat("pressure", currentlyObj));
+        weather.setPressureSeaLevel(getFloat("pressure", currentlyObj));
 
         return weather;
     }

@@ -3,7 +3,7 @@ package com.monte.tangoapp.model;
 public class Weather {
     private float humidity;
     private float temperature;
-    private float pressureSea;
+    private float pressureSeaLevel;
     private long unixTime;
 
     public long getUnixTime() {
@@ -13,10 +13,10 @@ public class Weather {
         this.unixTime = unixTime;
     }
     public float getPressureSeaLevel() {
-        return pressureSea;
+        return pressureSeaLevel;
     }
-    public void setPressureSea(float pressureSea) {
-        this.pressureSea = pressureSea;
+    public void setPressureSeaLevel(float pressureSeaLevel) {
+        this.pressureSeaLevel = pressureSeaLevel;
     }
 
     public float getTemperature() {
