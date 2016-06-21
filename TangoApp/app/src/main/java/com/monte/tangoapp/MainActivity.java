@@ -339,7 +339,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
                 currentAltitudeText.setText(String.format("%.3f m", altitude));
                 currentPressureText.setText(String.format("%.3f mbar", millibars_of_pressure ));
-                String floor = String.format("%.2f", (14.2 + altitude*forecastWeather.getTemperature()/273.15 - googleElevation.getAltitude())/4.0);
+                String floor = String.format("%.2f", (14 + altitude - googleElevation.getAltitude())/4.0);
                 currentFloorText.setText(floor);
                 break;
         }
