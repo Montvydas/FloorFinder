@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private EditText currentLocation;
     private ArrayAdapter locationListAdapter;
     private TextView currentGoogleAltitudeText;
+    private TextView currentFloorText;
 //    private List locationList;
 
     //Location stuff
@@ -295,6 +296,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         altitudeDifferenceText = (TextView) findViewById(R.id.altitudeDifferenceText);
         currentLocation = (EditText) findViewById(R.id.currentLocation);
         currentGoogleAltitudeText = (TextView) findViewById(R.id.currentGoogleAltitudeText);
+        currentFloorText = (TextView) findViewById(R.id.currentFloorText);
 
         locationListAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_expandable_list_item_1,displayTextList);
         ListView locationListView = (ListView) findViewById(R.id.locationList);
@@ -337,6 +339,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
                 currentAltitudeText.setText(String.format("%.3f m", altitude));
                 currentPressureText.setText(String.format("%.3f mbar", millibars_of_pressure ));
+                String floor = String.format("%.2f", (14.2 + altitude*forecastWeather.getTemperature()/273.15 - googleElevation.getAltitude())/4.0);
+                currentFloorText.setText(floor);
                 break;
         }
     }
