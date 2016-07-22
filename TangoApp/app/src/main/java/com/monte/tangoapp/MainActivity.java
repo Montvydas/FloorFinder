@@ -51,6 +51,7 @@ import org.json.JSONException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -83,6 +84,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorManager sensorManager;
     private Sensor pressureSensor;
+    private Sensor ambientTemperatureSensor;
+    private Sensor relativeHumiditySensor;
 
     private TextView currentPressureText;
     private TextView currentAltitudeText;
@@ -108,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private LocationListAdapter customLocationListAdapter;
 
     private GoogleMap mMap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -174,17 +178,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             lat = mLastLocation.getLatitude();
             lon = mLastLocation.getLongitude();
 
-            Log.e ("Lat", mLastLocation.getLatitude()+ "");
-            Log.e ("Long", mLastLocation.getLongitude()+ "");
-            Log.e ("Altitude", mLastLocation.getAltitude()+ "");
+            Log.e("Lat", mLastLocation.getLatitude() + "");
+            Log.e("Long", mLastLocation.getLongitude() + "");
+            Log.e("Altitude", mLastLocation.getAltitude() + "");
             Toast.makeText(getApplicationContext(), "Lat= " + (mLastLocation.getLatitude()) +
                     " Long= " + (mLastLocation.getLongitude()), Toast.LENGTH_LONG).show();
-            getQueryData ();
+            getQueryData();
         }
 
     }
 
-    private void getQueryData (){
+    private void getQueryData() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.INTERNET)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -213,12 +217,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-
     private Elevation googleElevation = new Elevation();
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
         mMap = googleMap;
+        mMap.setMyLocationEnabled(true);
     }
 
     private class JSONElevationTask extends AsyncTask<String, Void, Elevation> {
@@ -288,6 +295,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 e.printStackTrace();
             }
         }
+//        ambientTemperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+//        if (sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE) == null){
+//            Toast.makeText(this, "The phone doesn't have ambient temperature sensor", Toast.LENGTH_SHORT).show();
+//        }
+//        relativeHumiditySensor = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
+//        if (sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY) == null){
+//            Toast.makeText(this, "The phone doesn't have relative humidity sensor", Toast.LENGTH_SHORT).show();
+//        }
     }
 
     private void addViews (){
@@ -314,7 +329,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
-        sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_NORMAL);
+//        sensorManager.registerListener(this, ambientTemperatureSensor, SensorManager.SENSOR_DELAY_NORMAL);
+//        sensorManager.registerListener(this, relativeHumiditySensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -339,8 +356,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
                 currentAltitudeText.setText(String.format("%.3f m", altitude));
                 currentPressureText.setText(String.format("%.3f mbar", millibars_of_pressure ));
-                String floor = String.format("%.2f", (14 + altitude - googleElevation.getAltitude())/4.0);
+                String floor = String.format("%.2f", (offset + altitude - googleElevation.getAltitude())/4.0);
                 currentFloorText.setText(floor);
+                break;
+            case Sensor.TYPE_AMBIENT_TEMPERATURE:
+                Log.e("ambient temperature", event.values[0] + " ˚C");
+                break;
+            case Sensor.TYPE_RELATIVE_HUMIDITY:
+                Log.e("relative humidity", event.values[0] + " %");
                 break;
         }
     }
@@ -463,7 +486,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     + "\",\"" + getTimeFromUnix( forecastWeather.getUnixTime() ) + "\",\""+ googleElevation.getAltitude() + "\",\"" + altitudeList.get(i) + "\"\n";
         }
 
-
         String columnString =   "\"Location\",\"Barometer results (hPa)\",\"Sea Level Pressure(hPa)\",\"Temperature (K)\",\"Humidity (%)\",\"Station updating Time (Unix)\",\"Google Altitude (m)\",\"Altitude (m)\"";
         String combinedString = columnString + "\n" + dataString;
 
@@ -487,6 +509,47 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             dir.mkdirs();
 
             file   =   new File(dir, formattedDate + ".csv");
+            File allDataFile = new File (root.getAbsolutePath() + "/TangoApp/allData.csv");
+
+            boolean fileExists = true;
+            if (!allDataFile.exists()){
+                fileExists = false;
+            }
+
+            try {
+                FileWriter fw = new FileWriter(allDataFile, true);
+
+                if (!fileExists) {
+                    fw.write(columnString + "\n");
+//                    fw.flush();
+                }
+
+                fw.write(dataString);
+                fw.flush();
+                fw.close();
+                Toast.makeText(this, "Stored in /TangoApp/allData.csv", Toast.LENGTH_LONG).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+//            FileOutputStream out1   =   null;
+//            try {
+//                out1 = new FileOutputStream(allDataFile);
+//            } catch (FileNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//            try {
+//                out1.write(dataString.getBytes());
+//                Toast.makeText(this, "Stored in /TangoApp/allData.csv", Toast.LENGTH_LONG).show();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            try {
+//                out1.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+
             FileOutputStream out   =   null;
             try {
                 out = new FileOutputStream(file);
@@ -593,6 +656,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return true;
     }
 
+    private float offset = 0.0f;
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -600,9 +664,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_refresh) {
-            getQueryData();
-            return true;
+        switch (id){
+            case R.id.action_refresh:
+                getQueryData();
+                break;
+            case R.id.action_calibrate:
+                offset = googleElevation.getAltitude() - altitude;
+                Toast.makeText(getApplicationContext(), String.format("Offset = %.2f m", offset), Toast.LENGTH_LONG).show();
+                break;
         }
         return super.onOptionsItemSelected(item);
     }

@@ -4,7 +4,12 @@
     tools:context="com.example.monty.menuexample.MainActivity">
     <item
         android:id="@+id/action_refresh"
-        android:orderInCategory="100"
+        android:orderInCategory="1"
         android:title="Refresh"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_calibrate"
+        android:orderInCategory="2"
+        android:title="Calibrate"
         app:showAsAction="never" />
 </menu>
