@@ -359,12 +359,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 String floor = String.format("%.2f", (offset + altitude - googleElevation.getAltitude())/4.0);
                 currentFloorText.setText(floor);
                 break;
-            case Sensor.TYPE_AMBIENT_TEMPERATURE:
-                Log.e("ambient temperature", event.values[0] + " ˚C");
-                break;
-            case Sensor.TYPE_RELATIVE_HUMIDITY:
-                Log.e("relative humidity", event.values[0] + " %");
-                break;
+//            case Sensor.TYPE_AMBIENT_TEMPERATURE:
+//                Log.e("ambient temperature", event.values[0] + " ˚C");
+//                break;
+//            case Sensor.TYPE_RELATIVE_HUMIDITY:
+//                Log.e("relative humidity", event.values[0] + " %");
+//                break;
         }
     }
     private float millibars_of_pressure;
