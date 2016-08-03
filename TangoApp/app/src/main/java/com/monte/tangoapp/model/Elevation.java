@@ -1,13 +1,17 @@
 package com.monte.tangoapp.model;
 
 /**
- * Created by monty on 19/06/2016.
+ * Created by Monty on 19/06/2016.
  */
-public class Elevation {
-    private float altitude;
-    private float resolution;
-    private String status;
 
+//Elevation class object holds the information about the google elevation service results
+public class Elevation {
+    private float altitude;     //query gives altitude/elevation
+    private float resolution;   //resolution
+    private String status;      //and status ("OK")
+
+    //getters and setters are used specify the data when json is extracted and then
+    //use it within the application
     public float getAltitude() {
         return altitude;
     }

@@ -67,6 +67,12 @@
                         android:text="Current Floor:"
                         android:layout_gravity="center"
                         android:layout_marginTop="5dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="GPS Accuracy:"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="5dp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -106,6 +112,13 @@
                         android:layout_marginTop="5dp" />
                     <TextView
                         android:id="@+id/currentFloorText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="5dp" />
+                    <TextView
+                        android:id="@+id/gpsAccuracyText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"
