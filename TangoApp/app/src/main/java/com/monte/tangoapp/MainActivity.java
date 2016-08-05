@@ -1,6 +1,3 @@
-//mMap.addMarker(new MarkerOptions().position(point).title(String.format("Google Altitude= %.2f m", googleElevation.getAltitude())));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 18.5f));
-
 package com.monte.tangoapp;
 
 import android.Manifest;
@@ -76,7 +73,8 @@ import static android.hardware.SensorManager.getAltitude;
  * The Application constantly scans GPS location accuracy.
  * If accuracy drops below a certain threshold, application
  * notes that the user entered the building and thus starts
- * showing the correct floor.
+ * showing the correct floor. The primary use of the application
+ * is to collect data for further analysis.
  *
  * To achieve this the application uses these APIs:
  *  -   Google Location Client
@@ -272,8 +270,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        //If permissions are given, acquire google maps instance and allow showing the current location with a blue dot
+        //If permissions are given, acquire google maps instance
         mMap = googleMap;
+        //allow showing the current location with a blue dot
         mMap.setMyLocationEnabled(true);
     }
 
@@ -561,10 +560,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (dH < 0.5 && dH > -0.5)
             dH = 0.0;
         //From the difference evaluate the floor number
-        int floorNumber = (int) Math.round((Math.floor(dH / 3) + Math.ceil(dH / 4)) / 2);
+        double floorNr = (Math.floor(dH / 3) + Math.ceil(dH / 4)) / 2;
         Log.e("values", "dH=" + dH +  " googleOffset=" + googleOffset + " altitude=" + altitude + " elevation=" + googleElevation.getAltitude());
         Log.e("floor", "Nr. " + (Math.floor(dH / 3) + Math.ceil(dH / 4)) / 2);
-        return floorNumber;
+        if (floorNr < 0)
+            return (int) Math.floor(floorNr);
+        else if (floorNr > 0)
+            return (int) Math.ceil(floorNr);
+        else return 0;
     }
 
     private float millibars_of_pressure = 1013.25f; //the measured pressure from barometer sensor
