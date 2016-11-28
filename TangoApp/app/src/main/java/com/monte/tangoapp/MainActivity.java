@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private Location mLastAccurateLocation = null;  //Last detected location by the GPS
     private Location mCurrentLocation = null;       //Current Location of the device
-    private final float ACCURATE_DISTANCE = 15.0f;   //Threshold for detecting if the device is indoors or outdoors
+    private final float ACCURATE_DISTANCE = 5.0f;   //Threshold for detecting if the device is indoors or outdoors
     private boolean isIndoors = false;              //flag for specifying if the user is indoors or outdoors
     private boolean firstMeasurement = true;        //flag for specifying if it is the first location scan
     private boolean useGoogleReference = true;      //flag to specify, which method to use
@@ -504,6 +504,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean isPressureIndoorUpdated = false;    //flag telling if the pressure from barometer was updated
     private boolean isGoogleUpdated = false;            //flag telling if the google elevation api was updated
     private boolean isWeatherUpdated = false;           //flag telling if the weather from forecast.io api was updated
+    //Nexus 4 was -10.6 m
+    //Nexus 5 was 16.65 m
     private float googleOffset = 16.65f;                //offset between the google ground altitude and the barometer ground altitude
     private float groundLevelAltitude = 16.65f;         //calculated ground level altitude
     @Override
