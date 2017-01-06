@@ -1,17 +1,20 @@
 <resources>
-    <string name="app_name">Floorsome</string>
+    <string name="app_name">FloorLess</string>
 
-    <string name="pref_auto_update_title">Auto Update Settings</string>
-    <string name="pref_other_settings_title">Reference Settings</string>
+    <string name="pref_auto_update_title">Auto Updates Settings</string>
+    <string name="pref_other_settings_title">Sea Reference Settings</string>
 
     <string name="pref_title_auto_update">Enable Auto Updates</string>
     <string name="pref_summary_auto_update">This will automatically update required data repeatedly.</string>
 
-    <string name="pref_title_update_interval">Updates Interval (seconds)</string>
-    <string name="pref_summary_update_interval">Specify the update interval.</string>
+    <string name="pref_title_update_interval">Updates Interval</string>
+    <string name="pref_summary_update_interval">60 seconds.</string>
 
-    <string name="pref_title_ref_type">Ground Reference</string>
-    <string name="pref_summary_ref_type">This will allow to change the ground reference type.</string>
+    <string name="pref_title_ref_type">Used Sea Reference Station</string>
+    <string name="pref_summary_ref_type">Auto</string>
     <string name="pref_default_ref_type">0</string>
+
+    <string name="pref_title_ref_status">Current Offset</string>
+    <string name="pref_summary_ref_status">0 m, 0 hPa</string>
 
 </resources>

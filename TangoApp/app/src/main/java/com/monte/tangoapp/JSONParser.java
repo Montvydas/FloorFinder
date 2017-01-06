@@ -23,6 +23,9 @@ public class JSONParser {
 
     //OpenWeather query parser
     public static Weather getOpenWeatherMapWeather(String data) throws JSONException  {
+        if (data == null){
+            return null;
+        }
         Weather weather = new Weather();
         JSONObject jObj = new JSONObject(data);
 
@@ -38,15 +41,15 @@ public class JSONParser {
 
     //Forecast.io query parser
     public static Weather getForecastWeather (String data) throws JSONException {
-        Weather weather = new Weather();
         if (data == null){
             return null;
         }
+        Weather weather = new Weather();
         JSONObject jObj = new JSONObject(data);
         //gets the required json objects and extracts the relevant information
         JSONObject currentlyObj = getObject("currently", jObj);
         weather.setUnixTime(getLong("time", currentlyObj));
-        weather.setTemperature(getFloat("temperature", currentlyObj)+273.15f);  //Absolute temperature
+        weather.setTemperature(getFloat("temperature", currentlyObj) + 273.15f);  //Absolute temperature
         weather.setHumidity(getFloat("humidity", currentlyObj) * 100);
         weather.setPressureSeaLevel(getFloat("pressure", currentlyObj));
 
@@ -55,6 +58,10 @@ public class JSONParser {
 
     //Google Elevation Service query parser
     public static Elevation getGoogleElevationResults (String data) throws  JSONException {
+        if (data == null){
+            return null;
+        }
+
         Elevation elevation  = new Elevation();
         JSONObject jObj = new JSONObject(data);
 
@@ -69,6 +76,10 @@ public class JSONParser {
     }
 
     public static List<SparkFunWeather> getSparkFunWeatherResults (String data) throws JSONException{
+        if (data == null){
+            return null;
+        }
+
         List<SparkFunWeather> weatherList = new ArrayList<>();
         if (data.equals(null))
             return weatherList;

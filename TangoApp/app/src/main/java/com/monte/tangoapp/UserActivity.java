@@ -1,17 +1,22 @@
 package com.monte.tangoapp;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Address;
 import android.location.Location;
+import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,6 +30,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,6 +50,7 @@ import com.monte.tangoapp.tasks.SparkFunTaskListener;
 import com.monte.tangoapp.tasks.WeatherTaskListener;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by monte on 04/01/2017.
@@ -61,7 +68,6 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
 
     private TextView floorLevelText;
     private ProgressBar progressBar;
-    private Handler handler = new Handler();
     private int actualFloorLevel = 0;
     private MyProgressRunner runnerTask = null;
 
@@ -80,6 +86,8 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
     private double referencePressure = 1013.0;
     private Location EDINBURGH_STATION = new Location("edinburgh_station_coordinates");
 
+    private ImageView accuracyImage;
+
     private int pStatus = 0;
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -87,7 +95,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setStatusBarTranslucent(true);
-        getSupportActionBar().setTitle(Html.fromHtml("<font color='#250054'>Floorsome</font>"));
+        getSupportActionBar().setTitle(Html.fromHtml("<font color='#250054'>" + getString(R.string.app_name) + "</font>"));
 
         setContentView(R.layout.activity_user);
 
@@ -108,22 +116,29 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         floorLevelText.setText("--");
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         progressBar.setOnClickListener(this);
+        accuracyImage = (ImageView) findViewById(R.id.image_accuracy);
+        accuracyImage.setOnClickListener(this);
     }
 
     private boolean keepUpdating = false;
     private boolean isSavingGoogleOffset = false;
+    private final float filterSmooth = 0.1f;
 
+    private float prevPressure = 1013.25f;
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
             case Sensor.TYPE_PRESSURE:  //if it was pressure, get the pressure value
+                float currPressure = event.values[0]*filterSmooth + prevPressure*(1-filterSmooth);
+                prevPressure = currPressure;
+
                 if (pressureReferenceReady && groundLevelAltitudeReady && addressReady){
                     pressureReferenceReady = false;
                     groundLevelAltitudeReady = false;
                     addressReady = false;
 
                     if (isSavingGoogleOffset){
-                        float altitude = SensorManager.getAltitude((float) referencePressure, event.values[0]);
+                        float altitude = SensorManager.getAltitude((float) referencePressure, currPressure);
                         float newOffset = altitude - (float) groundLevelAltitude;
                         float combinedOffset = offsetFilterWeight*newOffset + (1-offsetFilterWeight)*getGoogleOffset();
 
@@ -132,8 +147,9 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                         isSavingGoogleOffset = false;
                     }
 
-                    Log.e("ref type", actualReferenceUsed + " ID");
+//                    Log.e("ref type", actualReferenceUsed + " ID");
 
+                    //stop spinning
                     if (runnerTask != null) {
                         pStatus = runnerTask.getStatus();
                         runnerTask.interrupt();
@@ -145,10 +161,20 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                         runnerTask = null;
                     }
                     keepUpdating = true;
+
+                    if (actualReferenceUsed == 0){
+                        accuracyImage.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_accuracy_1));
+                    } else if (actualReferenceUsed == 1){
+                        accuracyImage.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_accuracy_2));
+                    } else if (actualReferenceUsed == 2){
+                        accuracyImage.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_accuracy_3));
+                    } else {
+                        accuracyImage.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_accuracy_0));
+                    }
                 }
 
                 if (keepUpdating){
-                    userLevelAltitude = SensorManager.getAltitude((float) referencePressure, event.values[0]);
+                    userLevelAltitude = SensorManager.getAltitude((float) referencePressure, currPressure);
 
                     actualFloorLevel = getFloorNumber(userLevelAltitude, groundLevelAltitude, Constants.OFFSET_TO_GOOGLE);
                     countryText.setText(myCountryOffset.getAddress().getCountryName());
@@ -168,68 +194,138 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.progress_bar:
-                scanLocationForData();
+                startScanForData();
+                break;
+            case R.id.image_accuracy:
+                AlertDialog.Builder adb=new AlertDialog.Builder(UserActivity.this);
+                adb.setTitle("Results Accuracy");
+
+                if (actualReferenceUsed == 0){
+                    adb.setMessage(String.format("Default Constant Sea Pressure used (%.2f hPa)", referencePressure));
+                } else if (actualReferenceUsed == 1){
+                    adb.setMessage(String.format("Forecast.io Station Sea Pressure used (%.2f hPa)", referencePressure));
+                } else if (actualReferenceUsed == 2){
+                    adb.setMessage(String.format("Custom Edinburgh Station Sea Pressure used (%.2f hPa)", referencePressure));
+                } else {
+                    adb.setMessage(String.format("Default Constant Sea Pressure used (%.2f hPa)", referencePressure));
+                }
+
+                adb.setPositiveButton("Ok", null);
+                adb.show();
                 break;
         }
     }
 
-    public void scanLocationForData (){
-        mLocationUpdater.startLocationUpdates();
-
-        if (runnerTask == null){
-            runnerTask = new MyProgressRunner(pStatus, progressBar);
-            runnerTask.start();
+    public void startScanForData (){
+        if (!checkConnectivity()){
+            isSavingGoogleOffset = false;
+            return;
         }
+
+        if (checkGPS(this)){
+            mLocationUpdater.startLocationUpdates();
+            accuracyImage.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_accuracy_0));
+
+            if (runnerTask == null){
+                runnerTask = new MyProgressRunner(pStatus, progressBar);
+                runnerTask.start();
+            }
+        } else {
+            isSavingGoogleOffset = false;
+            Toast.makeText(this, "You need to enable GPS for this application to work!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public boolean checkGPS (Context mContext){
+        LocationManager locationManager = (LocationManager)
+                mContext.getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+    }
+
+    private boolean checkConnectivity (){
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+        if (!isConnected){
+            Toast.makeText(this, "Could not access the Server! Check Connectivity!", Toast.LENGTH_SHORT).show();
+        }
+        return isConnected;
     }
 
     @Override
     public void onWeatherUpdated(Weather weather){
-        if (weather != null){
-            referencePressure = weather.getPressureSeaLevel();
-        } else {
-            Toast.makeText(this, "You used up all 1000 daily allowed Forecast.io weather requests! Default Sea Level used (1013.25 hPa)!", Toast.LENGTH_LONG).show();
+        if (weather == null){
+            Toast.makeText(this, "You used up all available daily 1000 requests! Default values used!", Toast.LENGTH_SHORT).show();
             referencePressure = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
+            actualReferenceUsed = 0;
+        } else {
+            referencePressure = weather.getPressureSeaLevel();
+            actualReferenceUsed = 1;
         }
-        actualReferenceUsed = 0;
         pressureReferenceReady = true;
     }
 
     @Override
     public void onSparkFunUpdated (List<SparkFunWeather> sparkFunWeatherList){
-        if (sparkFunWeatherList.size() > 0){
-            referencePressure = sparkFunWeatherList.get(0).getPressureGroundLevel();
-            actualReferenceUsed = 1;
+
+        if (sparkFunWeatherList == null){
+            checkConnectivity();
+            referencePressure = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
+            actualReferenceUsed = -1;
             pressureReferenceReady = true;
         } else {
-            //make a query to Forecast.io to receive weather
-            Toast.makeText(this, "No data in the past 10min from SparkFun! Forecast.io Sea Level used!", Toast.LENGTH_LONG).show();
-            JSONWeatherTask forecastTask = new JSONWeatherTask(this);
-            forecastTask.execute(Constants.getForecastUrl(Constants.BASE_URL_FORECAST,
-                    Constants.API_KEY_FORECAST, lat, lon));
+            if (sparkFunWeatherList.size() > 0) {
+                referencePressure = sparkFunWeatherList.get(0).getPressureGroundLevel();
+                actualReferenceUsed = 2;
+                pressureReferenceReady = true;
+            } else {
+                //make a query to Forecast.io to receive weather
+                Toast.makeText(this, "No data in the past 10min from SparkFun! Forecast.io Sea Level used!", Toast.LENGTH_LONG).show();
+                JSONWeatherTask forecastTask = new JSONWeatherTask(this);
+                forecastTask.execute(Constants.getForecastUrl(Constants.BASE_URL_FORECAST,
+                        Constants.API_KEY_FORECAST, lat, lon));
+            }
         }
     }
 
     private double groundLevelAltitude = 0.0;
     @Override
     public void onElevationUpdated (Elevation elevation){
-        Log.e("elevation", elevation.getAltitude() + " m");
+        if (elevation == null){
+            Toast.makeText(this, "You used up all available daily 1000 requests!", Toast.LENGTH_SHORT).show();
+            groundLevelAltitude = 0;
+        } else {
+            groundLevelAltitude = elevation.getAltitude();
+        }
 
-        groundLevelAltitude = elevation.getAltitude();
         groundLevelAltitudeReady = true;
     }
 
     @Override
     public void onAddressUpdated(Address address) {
-        String countryCode = address.getCountryCode();
-        if (countryCode == null){
-            countryCode = "UK";
+        if (address == null){
+            myCountryOffset.setFloorOffsetFromCountry("--");
+            Address newAddress = new Address(new Locale("--"));
+            newAddress.setLocality("--");
+            newAddress.setCountryName("--");
+
+            myCountryOffset.setAddress(newAddress);
+            addressReady = true;
+        } else {
+            String countryCode = address.getCountryCode();
+            if (countryCode == null){
+                countryCode = "UK";
+            }
+            myCountryOffset.setFloorOffsetFromCountry(countryCode);
+            myCountryOffset.setAddress(address);
+            addressReady = true;
         }
-        myCountryOffset.setFloorOffsetFromCountry(countryCode);
-        myCountryOffset.setAddress(address);
-        addressReady = true;
     }
 
-    private int actualReferenceUsed = 0;
+    private int actualReferenceUsed = 1;
 
     @Override
     public void onLocationUpdated (Location location){
@@ -250,9 +346,9 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
             new JSONSparkFunPullTask(this).execute(Constants.getSparkFunPullUrl(Constants.BASE_URL_SPARK_, Constants.API_KEY_PUBLIC_SPARK));
         } else if (Constants.REFERENCE_TYPE == 2){  //forecast
             new JSONWeatherTask(this).execute(Constants.getForecastUrl(Constants.BASE_URL_FORECAST, Constants.API_KEY_FORECAST, lat, lon));
-        } else if (Constants.REFERENCE_TYPE == 3){  //default sea pressure
+        } else if (Constants.REFERENCE_TYPE == 3) {  //default sea pressure
             referencePressure = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
-            actualReferenceUsed = 2;
+            actualReferenceUsed = 0;
             pressureReferenceReady = true;
         }
 
@@ -264,7 +360,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onConnected() {
-        scanLocationForData();
+        startScanForData();
     }
 
     private int getFloorNumber (double altitude, double groundLevelAltitude, double offset){
@@ -298,7 +394,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                         //deleting everything means clearing all of the lists
                         isSavingGoogleOffset = true;
                         setOffsetCheck(true);
-                        scanLocationForData();
+                        startScanForData();
                         offsetFilterWeight = 0.1f;
                     }
                 });
@@ -307,7 +403,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                         //deleting everything means clearing all of the lists
                         isSavingGoogleOffset = true;
                         setOffsetCheck(true);
-                        scanLocationForData();
+                        startScanForData();
                         offsetFilterWeight = 1.0f;
                     }
                 });
@@ -379,8 +475,20 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         super.onResume();
         sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
-        if (!checkIfOffsetIsSet()){
-            Toast.makeText(this, "Before Using the Application you need to calibrate it!", Toast.LENGTH_LONG).show();
+        if (!getOffsetCheck()){
+            AlertDialog.Builder adb=new AlertDialog.Builder(UserActivity.this);
+            adb.setTitle("Welcome!");
+            adb.setMessage("As this is Your first time using the application, you need to calibrate it! Stay on the ground floor, keep the phone in a stable position and press 'OK'! Don't worry, you can always re-calibrate it afterwards!");
+            adb.setPositiveButton("Ok", new AlertDialog.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    //deleting everything means clearing all of the lists
+                    isSavingGoogleOffset = true;
+                    startScanForData();
+                    offsetFilterWeight = 1.0f;
+                    setOffsetCheck(true);
+                }
+            });
+            adb.show();
         }
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -424,7 +532,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         return settings.getFloat(Constants.PREFS_GOOGLE_OFFSET, (float) Constants.OFFSET_TO_GOOGLE);
     }
 
-    public boolean checkIfOffsetIsSet () {
+    public boolean getOffsetCheck () {
         SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
         return settings.getBoolean(Constants.PREFS_OFFSET_IS_SET, false);
     }
@@ -444,7 +552,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
     {
         @Override
         public void run() {
-            scanLocationForData();
+            startScanForData();
             mHandler.postDelayed(mHandlerTask, INTERVAL);
         }
     };

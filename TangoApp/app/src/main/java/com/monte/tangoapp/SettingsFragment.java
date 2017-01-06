@@ -8,8 +8,6 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceGroup;
-import android.preference.PreferenceManager;
-import android.util.Log;
 
 /**
  * Created by monte on 05/01/2017.
@@ -18,18 +16,20 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     public static final String KEY_AUTO_UPDATE_INTERVAL = "pref_key_update_interval";
     public static final String KEY_AUTO_UPDATE_CHECK = "pref_key_auto_update";
     public static final String KEY_REF_TYPE = "pref_key_ref_type";
+    public static final String KEY_REF_STATUS = "pref_key_ref_status";
     @TargetApi(Build.VERSION_CODES.M)
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.addPreferencesFromResource(R.xml.preferences);
+
         this.initSummaries(this.getPreferenceScreen());
 
-//        Preference connectionPref = findPreference(KEY_AUTO_UPDATE_INTERVAL);
-//        SharedPreferences prefs = this.getPreferenceScreen().getSharedPreferences();
-//        connectionPref.setSummary(prefs.getString(KEY_AUTO_UPDATE_INTERVAL, ""));
+        Preference connectionPref = findPreference(KEY_AUTO_UPDATE_INTERVAL);
+        connectionPref.setSummary(getInterval() + " seconds");
 
-//        Log.e("interval?", prefs.getString(KEY_AUTO_UPDATE_INTERVAL, ""));
+//        SharedPreferences prefs = this.getPreferenceScreen().getSharedPreferences();
+//        connectionPref.setSummary(prefs.getString(KEY_AUTO_UPDATE_INTERVAL, "") + " seconds");
 
         this.getPreferenceScreen().getSharedPreferences()
                 .registerOnSharedPreferenceChangeListener(this);
@@ -57,22 +57,25 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
             ListPreference listPref = (ListPreference) pref;
             pref.setSummary(listPref.getEntry());
         }
+        if (pref instanceof NumberPickerPreference){
+
+            NumberPickerPreference picker = (NumberPickerPreference) pref;
+            int index = NumberPickerPreference.getIndexOfInstance(getInterval());
+            picker.setValue(index);
+        }
+        if (pref.getKey().equals(KEY_REF_STATUS)){
+
+            pref.setSummary(String.format("%.2f m", Constants.OFFSET_TO_GOOGLE));
+        }
     }
-
-    /**
-     * used to change the summary of a preference
-     */
-//    public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
-//        Preference pref = findPreference(key);
-
-//    }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Preference connectionPref = findPreference(key);
         switch (key){
             case KEY_AUTO_UPDATE_INTERVAL:
-                connectionPref.setSummary(sharedPreferences.getString(key, ""));
+                setInterval(sharedPreferences.getString(key, ""));
+                connectionPref.setSummary(sharedPreferences.getString(key, "") + " seconds");
                 break;
             case KEY_REF_TYPE:
                 this.setSummary(connectionPref);
@@ -90,5 +93,18 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     public void onPause() {
         super.onPause();
         getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+    }
+
+    public void setInterval(String intervalIndex){
+        SharedPreferences settings = getActivity().getSharedPreferences(Constants.PREFS_NAME, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString(Constants.PREFS_AUTO_UPDATE_INTERVAL, intervalIndex);
+        // Commit the edits!
+        editor.commit();
+    }
+
+    public String getInterval (){
+        SharedPreferences settings = getActivity().getSharedPreferences(Constants.PREFS_NAME, 0);
+        return settings.getString(Constants.PREFS_AUTO_UPDATE_INTERVAL, "60");
     }
 }

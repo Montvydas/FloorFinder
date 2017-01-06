@@ -15,7 +15,8 @@
             android:dependency="pref_key_auto_update"
             android:title="@string/pref_title_update_interval"
             android:summary="@string/pref_summary_update_interval"
-            android:defaultValue="60" />
+            android:persistent="true"
+            android:defaultValue="5" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -30,6 +31,11 @@
             android:entryValues="@array/reference_values"
             android:defaultValue="@string/pref_default_ref_type"
             />
+
+        <Preference
+            android:key="pref_key_ref_status"
+            android:summary="@string/pref_summary_ref_status"
+            android:title="@string/pref_title_ref_status" />
     </PreferenceCategory>
 
 </PreferenceScreen>

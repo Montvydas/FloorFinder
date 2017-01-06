@@ -17,14 +17,15 @@ import android.widget.NumberPicker;
 public class NumberPickerPreference extends DialogPreference {
 
     // allowed range
-    public static final int MAX_VALUE = 5;
+    public static String[] displayedValues = new String[]{"10", "20", "30", "40", "50", "60", "120"};
+    public static final int MAX_VALUE = displayedValues.length-1;
     public static final int MIN_VALUE = 0;
     // enable or disable the 'circular behavior'
     public static final boolean WRAP_SELECTOR_WHEEL = true;
 
     private NumberPicker picker;
     private int value;
-    private String[] displayedValues = new String[]{"10", "20", "30", "40", "50", "60"};
+
 
     public NumberPickerPreference(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -77,12 +78,26 @@ public class NumberPickerPreference extends DialogPreference {
         return a.getInt(index, MIN_VALUE);
     }
 
+    public static int getIndexOfInstance (String value){
+        int index = MAX_VALUE;
+        for (int i = 0; i < displayedValues.length; i++) {
+            if (displayedValues[i].equals(value)) {
+                index = i;
+                break;
+            }
+        }
+        return index;
+    }
+
     @Override
     protected void onSetInitialValue(boolean restorePersistedValue, Object defaultValue) {
-        if (defaultValue != null){
-            setValue(restorePersistedValue ? getPersistedInt(MIN_VALUE) : (Integer) defaultValue);
+        if (restorePersistedValue){
+            String persistedString = this.getPersistedString(displayedValues[MAX_VALUE]);
+            setValue(getIndexOfInstance(persistedString));
+//            Log.e("here after reset?", String.valueOf(index));
         } else {
-            setValue(5);
+            int value = (Integer) defaultValue;
+            setValue(value);
         }
 
     }
@@ -90,6 +105,8 @@ public class NumberPickerPreference extends DialogPreference {
     public void setValue(int value) {
         this.value = value;
         persistString(displayedValues[value]);
+//        Log.e("value", String.valueOf(value));
+//        Log.e("string", displayedValues[value]);
     }
 
     public int getValue() {

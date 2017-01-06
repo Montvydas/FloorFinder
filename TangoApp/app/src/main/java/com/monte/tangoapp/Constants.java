@@ -15,6 +15,7 @@ public class Constants {
 
     public static boolean IS_AUTO_UPDATE_RUNNING = true;
     public static int AUTO_UPDATE_INTERVAL = 60;
+    public static String PREFS_AUTO_UPDATE_INTERVAL = "update_interval";
     public static int REFERENCE_TYPE = 0;
 
     public static final double EDINBURGH_STATION_OFFSET = 11000;

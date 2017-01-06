@@ -34,6 +34,7 @@ public class FloorOffsets {
         offsetMap.put("LT", convention2);
         offsetMap.put("RU", convention3);
         offsetMap.put("US", convention2);
+        offsetMap.put("--", convention2);
     }
 
     public FloorOffsets(){

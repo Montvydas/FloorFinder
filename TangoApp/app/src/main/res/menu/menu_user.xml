@@ -4,6 +4,12 @@
     tools:context="com.example.test.app.UserActivity">
 
     <!-- Settings, should always be in the overflow -->
+    <item android:id="@+id/action_info"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_info"
+        android:orderInCategory="001"
+        android:title="Settings" />
+
     <item android:id="@+id/action_calibrate"
         app:showAsAction="always"
         android:icon="@drawable/ic_calibrate"
