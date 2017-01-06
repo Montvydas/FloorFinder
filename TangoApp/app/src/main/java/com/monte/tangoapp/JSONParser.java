@@ -1,11 +1,18 @@
 package com.monte.tangoapp;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.monte.tangoapp.model.Elevation;
+import com.monte.tangoapp.model.SparkFunPostStatus;
+import com.monte.tangoapp.model.SparkFunWeather;
 import com.monte.tangoapp.model.Weather;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Create by Monte 2016/06.
@@ -32,6 +39,9 @@ public class JSONParser {
     //Forecast.io query parser
     public static Weather getForecastWeather (String data) throws JSONException {
         Weather weather = new Weather();
+        if (data == null){
+            return null;
+        }
         JSONObject jObj = new JSONObject(data);
         //gets the required json objects and extracts the relevant information
         JSONObject currentlyObj = getObject("currently", jObj);
@@ -58,6 +68,30 @@ public class JSONParser {
         return elevation;
     }
 
+    public static List<SparkFunWeather> getSparkFunWeatherResults (String data) throws JSONException{
+        List<SparkFunWeather> weatherList = new ArrayList<>();
+        if (data.equals(null))
+            return weatherList;
+        JSONArray jArray = new JSONArray(data);
+        for (int i = 0; i < jArray.length(); i++) {
+            JSONObject jObj = jArray.getJSONObject(i);
+            SparkFunWeather weather = new SparkFunWeather();
+            weather.setLocation(getString("location", jObj));
+            weather.setPressureGroundLevel(getFloat("pressure", jObj));
+            weather.setUnixTime(getLong("time", jObj));
+            weatherList.add(weather);
+        }
+        return weatherList;
+    }
+
+    public static SparkFunPostStatus getSparkFunPostStatus (String data) throws JSONException {
+        SparkFunPostStatus status  = new SparkFunPostStatus();
+        JSONObject jObj = new JSONObject(data);
+        status.setStatus(getBoolean("success", jObj));
+        status.setMessage(getString("message", jObj));
+        return status;
+    }
+
 
     private static JSONObject getObject(String tagName, JSONObject jObj)  throws JSONException {
         JSONObject subObj = jObj.getJSONObject(tagName);
@@ -82,6 +116,9 @@ public class JSONParser {
     }
     private static int  getInt(String tagName, JSONObject jObj) throws JSONException {
         return jObj.getInt(tagName);
+    }
+    private static boolean  getBoolean(String tagName, JSONObject jObj) throws JSONException {
+        return jObj.getBoolean(tagName);
     }
 
 }

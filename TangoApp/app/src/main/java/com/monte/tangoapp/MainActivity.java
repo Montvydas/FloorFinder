@@ -1,15 +1,23 @@
 package com.monte.tangoapp;
 
 import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.ActionBar;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -20,11 +28,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -43,6 +55,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.monte.tangoapp.model.Elevation;
+import com.monte.tangoapp.model.SparkFunPostStatus;
+import com.monte.tangoapp.model.SparkFunWeather;
 import com.monte.tangoapp.model.Weather;
 
 import org.json.JSONException;
@@ -56,7 +70,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static android.hardware.SensorManager.getAltitude;
 
@@ -129,7 +146,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView gpsAccuracyText;           //Displays the accuracy of the gps signal
     private GoogleMap mMap;                     //Google Maps fragment
 
-
     private GoogleApiClient mGoogleApiClient;   //Google client for requesting the location of the device
 
     private List altitudeList = new ArrayList();//List for storing collected altitudes
@@ -141,12 +157,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);     //add xml
         updateValuesFromBundle(savedInstanceState); //update the saved state with previous values
         initialiseSensors();                        //acquire sensors
         addViews();                                 //acquire views
         initialiseLocationProvider();               //acquire location provider
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); //screen always portrait
+        myCountryOffset.setFloorOffsetFromCountry("UK");
 
         //Google maps fragment is found and map is asked to be acquired
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -206,13 +224,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         startLocationUpdates();
     }
 
+    public void sparkData (View v){
+        switch (v.getId()){
+            case R.id.sparkFunPushButton:
+                Log.i("Spark", "Pushing Data");
+                JSONSparkFunPushTask sparkTaskPush = new JSONSparkFunPushTask();
+                sparkTaskPush.execute(getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure));
+                break;
+            case R.id.sparkFunPullButton:
+                Log.i("Spark", "Pulling Data");
+                JSONSparkFunPullTask sparkTaskPull = new JSONSparkFunPullTask();
+                sparkTaskPull.execute(getSparkFunPullUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK));
+                break;
+        }
+    }
+
+    private String BASE_URL_SPARK_= "https://data.sparkfun.com/";
+    private  String API_KEY_PUBLIC_SPARK = "***REMOVED***";
+    private String API_KEY_PRIVATE_SPARK = "***REMOVED***";
+    private String[] getSparkFunPullUrl (String baseAddress, String apiKey){
+        long time = 1482074058;
+        long unixTime = System.currentTimeMillis() / 1000L - 600;   //10min before data
+        return new String[] {baseAddress + "output/" + apiKey + ".json?gt[time]=" + String.valueOf(unixTime)};
+    }
+    private String[] getSparkFunPushUrl (String baseAddress, String apiPublicKey, String apiPrivateKey, float pressure){
+        long unixTime = System.currentTimeMillis() / 1000L;
+        return new String[] {baseAddress + "input/" + apiPublicKey + ".json?private_key=" + apiPrivateKey +
+                "&location=" + "edinburgh" + "&pressure=" + String.format("%.3f", pressure) + "&time=" + unixTime};
+    }
+
     /**
      * Location updates are being started with specific parameters such as update interval
      */
     protected void startLocationUpdates() {
         LocationRequest mLocationRequest = new LocationRequest();   //create location request object
         mLocationRequest.setInterval(10000);                        //specify request interval
-        mLocationRequest.setFastestInterval(5000);                  //request location updates every 5 seconds at fastest
+//        mLocationRequest.setFastestInterval(5000);                  //request location updates every 5 seconds at fastest
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);   //force to use GPS location for the best accuracy
 
         //check if the user gave the permission to access the device location
@@ -251,6 +298,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             //make a query to Forecast.io to receive weather
             JSONWeatherTask forecastTask = new JSONWeatherTask();
+            String[] tmp = getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon);
+            Log.e("Forecast.io", tmp[0]);
             forecastTask.execute(getForecastUrl(BASE_URL_FORECAST, API_KEY_FORECAST, lat, lon));
         }
     }
@@ -282,6 +331,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean isIndoors = false;              //flag for specifying if the user is indoors or outdoors
     private boolean firstMeasurement = true;        //flag for specifying if it is the first location scan
     private boolean useGoogleReference = true;      //flag to specify, which method to use
+    private FloorOffsets myCountryOffset;
+
     @Override
     public void onLocationChanged(Location location) {
         //debug messages:
@@ -316,6 +367,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 lat = mCurrentLocation.getLatitude();
                 lon = mCurrentLocation.getLongitude();
                 //print latitude, longitude and accuracy
+
+
+                Address address = myCountryOffset.getLocationAddress(this, lat, lon);
+                String countryCode = address.getCountryCode();
+                if (countryCode == null){
+                    countryCode = "UK";
+                }
+                myCountryOffset.setFloorOffsetFromCountry(countryCode);
+
+
+                Log.e("floor offsets", countryCode + " GND=" + myCountryOffset.getGroundFloorOffset() + " BSM=" + myCountryOffset.getBasementFloorOffset());
                 Log.e("new Location", "lat=" + lat + "long=" + lon + " accuracy=" + location.getAccuracy() + " m");
 
                 Toast.makeText(getApplicationContext(), "You are now indoors!\nLat= " + lat +
@@ -334,6 +396,57 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //Elevation object saves the information about the elevation and resolution
     private Elevation googleElevation = new Elevation();
+
+    private class JSONSparkFunPullTask extends AsyncTask<String, Void, List<SparkFunWeather>>{
+        @Override
+        protected List<SparkFunWeather> doInBackground(String... params) {
+            //data is received as a json string from the requested website
+            String data = ((new HttpClientQuery()).getQueryResult(params[0]));
+            List<SparkFunWeather> weatherList = new ArrayList<>();
+            try {
+                //then data is parsed using a json parser into an elevation object
+                weatherList = JSONParser.getSparkFunWeatherResults(data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            //returns the received elevation object
+            return weatherList;
+        }
+
+        @Override
+        protected void onPostExecute(List<SparkFunWeather> sparkFunWeatherList) {
+            super.onPostExecute(sparkFunWeatherList);
+            for (SparkFunWeather sparkFunWeather: sparkFunWeatherList) {
+                Log.e("spark", sparkFunWeather.getLocation() + " " + sparkFunWeather.getPressureGroundLevel() + " " + sparkFunWeather.getUnixTime());
+            }
+        }
+    }
+
+    private class JSONSparkFunPushTask extends AsyncTask<String, Void, SparkFunPostStatus>{
+        @Override
+        protected SparkFunPostStatus doInBackground(String... params) {
+            //data is received as a json string from the requested website
+            String data = ((new HttpClientQuery()).getQueryResult(params[0]));
+            SparkFunPostStatus status = new SparkFunPostStatus();
+            try {
+                //then data is parsed using a json parser into an elevation object
+                status = JSONParser.getSparkFunPostStatus(data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            //returns the received elevation object
+            return status;
+        }
+
+        @Override
+        protected void onPostExecute(SparkFunPostStatus sparkFunPostStatus) {
+            super.onPostExecute(sparkFunPostStatus);
+            Log.e("sparkPush", "status=" + sparkFunPostStatus.isStatus() + " message=" + sparkFunPostStatus.getMessage());
+//            for (SparkFunWeather sparkFunWeather: sparkFunWeatherList) {
+//                Log.e("spark", sparkFunWeather.getLocation() + " " + sparkFunWeather.getPressureGroundLevel() + " " + sparkFunWeather.getUnixTime());
+//            }
+        }
+    }
 
     //A request is made in a form of async task to perform in background
     private class JSONElevationTask extends AsyncTask<String, Void, Elevation> {
@@ -471,8 +584,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onResume();
         //enable sensors when app is active
         sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_NORMAL);
-//        sensorManager.registerListener(this, ambientTemperatureSensor, SensorManager.SENSOR_DELAY_NORMAL);
-//        sensorManager.registerListener(this, relativeHumiditySensor, SensorManager.SENSOR_DELAY_NORMAL);
         if (mGoogleApiClient.isConnected()) {
             startLocationUpdates();     //also start location updates
         }
@@ -508,12 +619,33 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //Nexus 5 was 16.65 m
     private float googleOffset = 16.65f;                //offset between the google ground altitude and the barometer ground altitude
     private float groundLevelAltitude = 16.65f;         //calculated ground level altitude
+
+    private List<Float> pressureFilter = new ArrayList<>();
+    private float calculateAverage(List <Float> vals) {
+        float sum = 0;
+        if(!vals.isEmpty()) {
+            for (Float mark : vals) {
+                sum += mark;
+            }
+            return sum / vals.size();
+        }
+        return sum;
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         //check which sensor was updated
         switch (event.sensor.getType()){
             case Sensor.TYPE_PRESSURE:  //if it was pressure, get the pressure value
-                millibars_of_pressure = event.values[0];
+
+                pressureFilter.add(event.values[0]);
+                if (pressureFilter.size() > 5){
+                    pressureFilter.remove(0);
+                }
+
+                millibars_of_pressure = calculateAverage(pressureFilter);
+
+//                millibars_of_pressure = event.values[0];
                 //calculate the altitude using the provided android static method
                 altitude = getAltitude(local_sea_level_pressure, millibars_of_pressure);
 
@@ -522,7 +654,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 currentPressureText.setText(String.format("%.3f mbar", millibars_of_pressure));
 
                 //call method for calculating the floor level
-                currentFloorText.setText(evaluateFloorNumber()+"");
+
+                currentFloorText.setText(String.valueOf(myCountryOffset.getCountryFloor(getFloorNumber())));
 
                 //calculates the offset value
                 //All of the mentioned conditions must be when and then the ground floor level can be updated
@@ -555,16 +688,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * Algorithm for calculating the floor number
      * @return floorNumber;
      */
-    private int evaluateFloorNumber (){
+    private int getFloorNumber (){
         //Calculate the difference between the altitude and the groundLevelAltitude
         double dH = altitude - groundLevelAltitude;
         //Algorithm doesn't handle well values around ground floor, thus need some thresholds
-        if (dH < 0.5 && dH > -0.5)
+        if (Math.abs(dH) < 1.5)
             dH = 0.0;
         //From the difference evaluate the floor number
         double floorNr = (Math.floor(dH / 3) + Math.ceil(dH / 4)) / 2;
-        Log.e("values", "dH=" + dH +  " googleOffset=" + googleOffset + " altitude=" + altitude + " elevation=" + googleElevation.getAltitude());
-        Log.e("floor", "Nr. " + (Math.floor(dH / 3) + Math.ceil(dH / 4)) / 2);
+//        Log.e("values", "dH=" + dH +  " googleOffset=" + googleOffset + " altitude=" + altitude + " elevation=" + googleElevation.getAltitude());
+//        Log.e("floor", "Nr. " + (Math.floor(dH / 3) + Math.ceil(dH / 4)) / 2);
         if (floorNr < 0)
             return (int) Math.floor(floorNr);
         else if (floorNr > 0)
@@ -630,7 +763,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         //notify the listView with the changes in the list
         locationListAdapter.notifyDataSetChanged();
         //clear the text field
-        currentLocation.getText().clear();
+
+//        currentLocation.getText().clear();
     }
 
     /**
@@ -908,6 +1042,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     private String [] getForecastUrl (String baseAddress, String apiKey, double lat, double lon){
         //Forecast.io additionally can specify flags to request less information
+        long unixTime = System.currentTimeMillis() / 1000L;
+//        unixTime = 1483457110;
         return new String[] {baseAddress + apiKey + "/" + lat + "," + lon + "?units=si&exclude=minutely,hourly,daily,alerts,flags"};
     }
 

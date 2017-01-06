@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/pref_auto_update_title"
+        android:key="pref_key_storage_settings">
+
+        <CheckBoxPreference
+            android:key="pref_key_auto_update"
+            android:summary="@string/pref_summary_auto_update"
+            android:title="@string/pref_title_auto_update"
+            android:defaultValue="true"/>
+
+        <com.monte.tangoapp.NumberPickerPreference
+            android:key="pref_key_update_interval"
+            android:dependency="pref_key_auto_update"
+            android:title="@string/pref_title_update_interval"
+            android:summary="@string/pref_summary_update_interval"
+            android:defaultValue="60" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_other_settings_title"
+        android:key="pref_key_storage_settings">
+
+        <ListPreference
+            android:key="pref_key_ref_type"
+            android:title="@string/pref_title_ref_type"
+            android:dialogTitle="@string/pref_summary_ref_type"
+            android:entries="@array/reference_names"
+            android:entryValues="@array/reference_values"
+            android:defaultValue="@string/pref_default_ref_type"
+            />
+    </PreferenceCategory>
+
+</PreferenceScreen>

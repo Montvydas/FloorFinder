@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.test.app.UserActivity">
+
+    <!-- Settings, should always be in the overflow -->
+    <item android:id="@+id/action_calibrate"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_calibrate"
+        android:orderInCategory="010"
+        android:title="Settings" />
+
+    <item android:id="@+id/action_settings"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_setting_light"
+        android:orderInCategory="100"
+        android:title="Settings" />
+</menu>

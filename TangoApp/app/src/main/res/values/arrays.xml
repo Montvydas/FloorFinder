@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="reference_names">
+        <item>Auto</item>
+        <item>Edinburgh Custom Station</item>
+        <item>Forecast.io Station</item>
+        <item>Default Sea Level</item>
+    </string-array>
+
+    <string-array name="reference_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+</resources>

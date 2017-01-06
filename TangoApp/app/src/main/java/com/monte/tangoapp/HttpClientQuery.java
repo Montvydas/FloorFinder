@@ -18,6 +18,7 @@ public class HttpClientQuery {
             httpConnection = (HttpURLConnection) ( new URL(UrlAddress)).openConnection();
             //set request to GET, which gets the queried information
             httpConnection.setRequestMethod("GET");
+//            httpConnection.setRequestMethod("POST");
             //connect to the server
             httpConnection.connect();
 

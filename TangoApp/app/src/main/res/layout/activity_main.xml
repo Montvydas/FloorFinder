@@ -36,6 +36,15 @@
                     android:orientation="vertical"
                     android:layout_weight="1">
 
+                    <Button
+                        android:id="@+id/sparkFunPushButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="5dp"
+                        android:onClick="sparkData"
+                        android:text="Spark Push!"/>
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -80,6 +89,15 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:layout_weight="1">
+
+                    <Button
+                        android:id="@+id/sparkFunPullButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Spark Pull!"
+                        android:onClick="sparkData"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="5dp" />
 
                     <TextView
                         android:id="@+id/currentGoogleAltitudeText"

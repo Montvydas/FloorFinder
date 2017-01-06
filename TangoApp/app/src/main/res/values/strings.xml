@@ -1,3 +1,17 @@
 <resources>
-    <string name="app_name">TangoApp</string>
+    <string name="app_name">Floorsome</string>
+
+    <string name="pref_auto_update_title">Auto Update Settings</string>
+    <string name="pref_other_settings_title">Reference Settings</string>
+
+    <string name="pref_title_auto_update">Enable Auto Updates</string>
+    <string name="pref_summary_auto_update">This will automatically update required data repeatedly.</string>
+
+    <string name="pref_title_update_interval">Updates Interval (seconds)</string>
+    <string name="pref_summary_update_interval">Specify the update interval.</string>
+
+    <string name="pref_title_ref_type">Ground Reference</string>
+    <string name="pref_summary_ref_type">This will allow to change the ground reference type.</string>
+    <string name="pref_default_ref_type">0</string>
+
 </resources>
