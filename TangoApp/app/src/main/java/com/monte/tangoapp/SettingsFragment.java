@@ -17,6 +17,8 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     public static final String KEY_AUTO_UPDATE_CHECK = "pref_key_auto_update";
     public static final String KEY_REF_TYPE = "pref_key_ref_type";
     public static final String KEY_REF_STATUS = "pref_key_ref_status";
+    public static final String KEY_BUILDING_TYPE = "pref_key_building_type";
+
     @TargetApi(Build.VERSION_CODES.M)
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -80,6 +82,8 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
             case KEY_REF_TYPE:
                 this.setSummary(connectionPref);
                 break;
+            case KEY_BUILDING_TYPE:
+                this.setSummary(connectionPref);
         }
     }
 //

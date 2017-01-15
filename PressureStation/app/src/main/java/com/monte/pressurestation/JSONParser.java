@@ -10,6 +10,9 @@ import org.json.JSONObject;
 //JSON parser is used to parse json data from various queries to a sensible information
 public class JSONParser {
     public static SparkFunPostStatus getSparkFunPostStatus (String data) throws JSONException {
+        if (data == null){
+            return null;
+        }
         SparkFunPostStatus status  = new SparkFunPostStatus();
         JSONObject jObj = new JSONObject(data);
         status.setStatus(getBoolean("success", jObj));

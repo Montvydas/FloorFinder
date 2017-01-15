@@ -24,6 +24,7 @@ public class FloorOffsets {
     private int basementFloorOffset = 0;
     private Map<String, Pair<Integer, Integer>> offsetMap = new HashMap<String, Pair<Integer, Integer>>();
     private Address address;
+    private String numberingConvention = "UK";
 
     private void addCountriesToMap(){
         Pair<Integer, Integer> convention1 = new Pair<>(0, 0);
@@ -34,7 +35,7 @@ public class FloorOffsets {
         offsetMap.put("LT", convention2);
         offsetMap.put("RU", convention3);
         offsetMap.put("US", convention2);
-        offsetMap.put("--", convention2);
+        offsetMap.put("--", convention1);
     }
 
     public FloorOffsets(){
@@ -50,6 +51,19 @@ public class FloorOffsets {
             this.groundFloorOffset = 0;
             this.basementFloorOffset = 0;
         }
+    }
+
+    public void setNumberingConvention(String numberingConvention) {
+        Pair<Integer, Integer> offsetPair = offsetMap.get(numberingConvention);
+        if (offsetPair != null && !offsetPair.first.equals("--")){
+            this.numberingConvention = numberingConvention;
+        } else {
+            this.numberingConvention = "UK";
+        }
+    }
+
+    public String getNumberingConvention() {
+        return numberingConvention;
     }
 
     public int getGroundFloorOffset() {

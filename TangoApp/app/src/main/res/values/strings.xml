@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">FloorLess</string>
+    <string name="app_name">Floor Finder</string>
 
     <string name="pref_auto_update_title">Auto Updates Settings</string>
-    <string name="pref_other_settings_title">Sea Reference Settings</string>
+    <string name="pref_other_settings_title">Other Settings</string>
 
     <string name="pref_title_auto_update">Enable Auto Updates</string>
     <string name="pref_summary_auto_update">This will automatically update required data repeatedly.</string>
@@ -14,7 +14,11 @@
     <string name="pref_summary_ref_type">Auto</string>
     <string name="pref_default_ref_type">0</string>
 
-    <string name="pref_title_ref_status">Current Offset</string>
-    <string name="pref_summary_ref_status">0 m, 0 hPa</string>
+    <string name="pref_title_ref_status">Current Offset to Ground</string>
+    <string name="pref_summary_ref_status">0 m</string>
+
+    <string name="pref_title_building_type">Enable Auto Floor Convention</string>
+    <string name="pref_summary_building_type">This will use the country of residence numbering convention. Otherwise UK used.</string>
+    <string name="pref_default_building_type">true</string>
 
 </resources>

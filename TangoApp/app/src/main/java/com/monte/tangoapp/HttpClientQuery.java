@@ -2,13 +2,21 @@ package com.monte.tangoapp;
 
 import android.util.Log;
 
+import com.monte.tangoapp.tasks.NoSSLv3Factory;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import javax.net.ssl.HttpsURLConnection;
+
 public class HttpClientQuery {
+
+    static {
+        HttpsURLConnection.setDefaultSSLSocketFactory(new NoSSLv3Factory());}
+
     //pass url and collect the received date in a form of string
     public String getQueryResult(String UrlAddress) {
         HttpURLConnection httpConnection = null ;

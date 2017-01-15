@@ -36,6 +36,12 @@
             android:key="pref_key_ref_status"
             android:summary="@string/pref_summary_ref_status"
             android:title="@string/pref_title_ref_status" />
+
+        <CheckBoxPreference
+            android:key="pref_key_building_type"
+            android:summary="@string/pref_summary_building_type"
+            android:title="@string/pref_title_building_type"
+            android:defaultValue="@string/pref_default_building_type"/>
     </PreferenceCategory>
 
 </PreferenceScreen>

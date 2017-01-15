@@ -15,16 +15,18 @@ public class Constants {
 
     public static boolean IS_AUTO_UPDATE_RUNNING = true;
     public static int AUTO_UPDATE_INTERVAL = 60;
-    public static String PREFS_AUTO_UPDATE_INTERVAL = "update_interval";
+    public static final String PREFS_AUTO_UPDATE_INTERVAL = "update_interval";
     public static int REFERENCE_TYPE = 0;
+    public static boolean IS_AUTO_BUILDING_TYPE = true;
 
     public static final double EDINBURGH_STATION_OFFSET = 11000;
     public static final String PREFS_NAME = "MyPrefsFile";
-    public static final String PREFS_GOOGLE_OFFSET = "googleOffset";
+    public static final String PREFS_GOOGLE_OFFSET = "google_offset";
     public static final String PREFS_OFFSET_IS_SET = "offset_set";
+    public static final String PREFS_BUILDING_TYPE = "building_type";
 
 
-    public static double OFFSET_TO_GOOGLE = 16.5;
+    public static float OFFSET_TO_GOOGLE = 16.5f;
 
     //constants used when requesting permissions
     public static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
@@ -46,7 +48,7 @@ public class Constants {
     public static final String API_KEY_FORECAST = "***REMOVED***";
 
 
-    public static final String BASE_URL_SPARK_= "https://data.sparkfun.com/";
+    public static final String BASE_URL_SPARK_= "http://data.sparkfun.com/";
     public static final String API_KEY_PUBLIC_SPARK = "***REMOVED***";
     public static final String API_KEY_PRIVATE_SPARK = "***REMOVED***";
 

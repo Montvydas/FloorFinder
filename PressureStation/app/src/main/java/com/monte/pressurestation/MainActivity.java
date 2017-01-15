@@ -9,9 +9,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.LocationListener;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -22,6 +24,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -29,10 +32,11 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.net.ssl.HttpsURLConnection;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private SensorManager sensorManager;
     private Sensor pressureSensor;
-    private float millibars_of_pressure = 0;
     private Context context;
 
     @Override
@@ -63,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //                setExactAndAllowWhileIdle(...);
 //            }
 
-            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, System.currentTimeMillis(), 60000, pendingIntent);
+            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, System.currentTimeMillis(), 600, pendingIntent);
 //            alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, 10000, pendingIntent);
         }
 
@@ -72,6 +76,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 // Use inexact repeating which is easier on battery (system can phase events and not wake at exact times)
 //        alarmMgr.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, System.currentTimeMillis(), 10000, pendingIntent);
+
+        startRepeatedUpdates();
+        sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
     }
 
@@ -106,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return super.onOptionsItemSelected(item);
     }
 
-    private String BASE_URL_SPARK_= "https://data.sparkfun.com/";
+    private String BASE_URL_SPARK_= "http://data.sparkfun.com/";
     private  String API_KEY_PUBLIC_SPARK = "***REMOVED***";
     private String API_KEY_PRIVATE_SPARK = "***REMOVED***";
 
@@ -140,40 +147,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
-        //enable sensors when app is active
-
-        sensorManager.registerListener(this, pressureSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
     @Override
     protected void onPause() {
         super.onPause();
-        //disable sensors when app is in sleep
-        sensorManager.unregisterListener(this);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        sensorManager.unregisterListener(this);
+        stopRepeatingUpdates();
+    }
+
+    private final float filterSmooth = 0.2f;
+    private float millibars_of_pressure = 1013.25f;
 
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
             case Sensor.TYPE_PRESSURE:  //if it was pressure, get the pressure value
-
-                pressureFilter.add(event.values[0]);
-                if (pressureFilter.size() > 5) {
-                    pressureFilter.remove(0);
-                }
-                millibars_of_pressure = calculateAverage(pressureFilter);
+                float currPressure = event.values[0]*filterSmooth + millibars_of_pressure*(1-filterSmooth);
+                millibars_of_pressure = currPressure;
         }
-    }
-
-    private List<Float> pressureFilter = new ArrayList<>();
-    private float calculateAverage(List <Float> vals) {
-        float sum = 0;
-        if(!vals.isEmpty()) {
-            for (Float mark : vals) {
-                sum += mark;
-            }
-            return sum / vals.size();
-        }
-        return sum;
     }
 
     @Override
@@ -181,9 +177,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
+
     public void pushDataButton (View v){
         JSONSparkFunPushTask sparkTaskPush = new JSONSparkFunPushTask();
-        sparkTaskPush.execute(getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure));
+        String[] link = getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure);
+        sparkTaskPush.execute(link);
     }
 
     public class MyAlarmReceiver extends WakefulBroadcastReceiver {
@@ -192,10 +190,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //        Intent background = new Intent(context, BackgroundService.class);
 
 //        context.startService(background);
-            Log.i("SimpleWakefulReceiver", "" + System.currentTimeMillis());
-            JSONSparkFunPushTask sparkTaskPush = new JSONSparkFunPushTask();
-            sparkTaskPush.execute(getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure));
-            Log.i("SimpleWakefulReceiver", "" + System.currentTimeMillis());
+            Log.e("SimpleWakefulReceiver", "" + System.currentTimeMillis());
+//            JSONSparkFunPushTask sparkTaskPush = new JSONSparkFunPushTask();
+//            sparkTaskPush.execute(getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure));
+//            Log.i("SimpleWakefulReceiver", "" + System.currentTimeMillis());
         }
     }
 
@@ -218,10 +216,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         @Override
         protected void onPostExecute(SparkFunPostStatus sparkFunPostStatus) {
             super.onPostExecute(sparkFunPostStatus);
-            Log.e("sparkPush", "status=" + sparkFunPostStatus.isStatus() + " message=" + sparkFunPostStatus.getMessage());
+            if (sparkFunPostStatus == null){
+                Log.e("sparkPush", "failed to post the message!");
+            } else {
+                Log.e("sparkPush", "status=" + sparkFunPostStatus.isStatus() + " message=" + sparkFunPostStatus.getMessage());
+            }
+
 //            for (SparkFunWeather sparkFunWeather: sparkFunWeatherList) {
 //                Log.e("spark", sparkFunWeather.getLocation() + " " + sparkFunWeather.getPressureGroundLevel() + " " + sparkFunWeather.getUnixTime());
 //            }
+        }
+    }
+
+    private static int INTERVAL = 1000 * 60; //every minute
+    Handler mHandler = new Handler();
+
+    Runnable mHandlerTask = new Runnable()
+    {
+        @Override
+        public void run() {
+            new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure));
+            mHandler.postDelayed(mHandlerTask, INTERVAL);
+        }
+    };
+
+    public void startRepeatedUpdates()
+    {
+        mHandlerTask.run();
+    }
+
+    public void stopRepeatingUpdates()
+    {
+        mHandler.removeCallbacks(mHandlerTask);
+    }
+
+    protected void setStatusBarTranslucent(boolean makeTranslucent) {
+        if (makeTranslucent) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
     }
 }

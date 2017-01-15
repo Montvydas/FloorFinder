@@ -122,17 +122,17 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
 
     private boolean keepUpdating = false;
     private boolean isSavingGoogleOffset = false;
-    private final float filterSmooth = 0.1f;
+    private final float filterSmooth = 0.2f;
 
-    private float prevPressure = 1013.25f;
+    private float currPressure = 1013.25f;
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
             case Sensor.TYPE_PRESSURE:  //if it was pressure, get the pressure value
-                float currPressure = event.values[0]*filterSmooth + prevPressure*(1-filterSmooth);
-                prevPressure = currPressure;
+                currPressure = event.values[0]*filterSmooth + currPressure*(1-filterSmooth);
 
                 if (pressureReferenceReady && groundLevelAltitudeReady && addressReady){
+                    currPressure = event.values[0];
                     pressureReferenceReady = false;
                     groundLevelAltitudeReady = false;
                     addressReady = false;
@@ -140,7 +140,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                     if (isSavingGoogleOffset){
                         float altitude = SensorManager.getAltitude((float) referencePressure, currPressure);
                         float newOffset = altitude - (float) groundLevelAltitude;
-                        float combinedOffset = offsetFilterWeight*newOffset + (1-offsetFilterWeight)*getGoogleOffset();
+                        float combinedOffset = offsetFilterWeight*newOffset + (1-offsetFilterWeight)*Constants.OFFSET_TO_GOOGLE;
 
                         setNewGoogleOffset(combinedOffset);
                         Constants.OFFSET_TO_GOOGLE = getGoogleOffset();
@@ -179,7 +179,11 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                     actualFloorLevel = getFloorNumber(userLevelAltitude, groundLevelAltitude, Constants.OFFSET_TO_GOOGLE);
                     countryText.setText(myCountryOffset.getAddress().getCountryName());
                     cityText.setText(myCountryOffset.getAddress().getLocality());
-                    floorLevelText.setText(String.valueOf(myCountryOffset.getCountryFloor(actualFloorLevel)));
+                    if (Constants.IS_AUTO_BUILDING_TYPE) {
+                        floorLevelText.setText(String.valueOf(myCountryOffset.getCountryFloor(actualFloorLevel)));
+                    } else {
+                        floorLevelText.setText(String.valueOf(actualFloorLevel));
+                    }
                 }
                 break;
         }
@@ -198,16 +202,15 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.image_accuracy:
                 AlertDialog.Builder adb=new AlertDialog.Builder(UserActivity.this);
-                adb.setTitle("Results Accuracy");
 
                 if (actualReferenceUsed == 0){
-                    adb.setMessage(String.format("Default Constant Sea Pressure used (%.2f hPa)", referencePressure));
+                    adb.setTitle(String.format("Reference - Default Constant Sea Pressure"));
                 } else if (actualReferenceUsed == 1){
-                    adb.setMessage(String.format("Forecast.io Station Sea Pressure used (%.2f hPa)", referencePressure));
+                    adb.setTitle(String.format("Reference - Forecast.io Station"));
                 } else if (actualReferenceUsed == 2){
-                    adb.setMessage(String.format("Custom Edinburgh Station Sea Pressure used (%.2f hPa)", referencePressure));
+                    adb.setTitle(String.format("Reference - Custom Edinburgh Station"));
                 } else {
-                    adb.setMessage(String.format("Default Constant Sea Pressure used (%.2f hPa)", referencePressure));
+                    adb.setTitle(String.format("Reference - Default Constant Sea Pressure"));
                 }
 
                 adb.setPositiveButton("Ok", null);
@@ -270,12 +273,17 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onSparkFunUpdated (List<SparkFunWeather> sparkFunWeatherList){
-
         if (sparkFunWeatherList == null){
-            checkConnectivity();
-            referencePressure = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
-            actualReferenceUsed = -1;
-            pressureReferenceReady = true;
+            if (checkConnectivity()) {
+                Toast.makeText(this, "Error while accessing SparkFun servers, trying again...", Toast.LENGTH_SHORT).show();
+                new JSONSparkFunPullTask(this).execute(Constants.getSparkFunPullUrl(Constants.BASE_URL_SPARK_, Constants.API_KEY_PUBLIC_SPARK));
+            } else {
+                Toast.makeText(this, "No internet connectivity...", Toast.LENGTH_SHORT).show();
+                referencePressure = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
+                actualReferenceUsed = 0;
+                pressureReferenceReady = true;
+
+            }
         } else {
             if (sparkFunWeatherList.size() > 0) {
                 referencePressure = sparkFunWeatherList.get(0).getPressureGroundLevel();
@@ -283,7 +291,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                 pressureReferenceReady = true;
             } else {
                 //make a query to Forecast.io to receive weather
-                Toast.makeText(this, "No data in the past 10min from SparkFun! Forecast.io Sea Level used!", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "No data in the past 10min from SparkFun! Forecast.io Sea Level used!", Toast.LENGTH_SHORT).show();
                 JSONWeatherTask forecastTask = new JSONWeatherTask(this);
                 forecastTask.execute(Constants.getForecastUrl(Constants.BASE_URL_FORECAST,
                         Constants.API_KEY_FORECAST, lat, lon));
@@ -307,20 +315,21 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onAddressUpdated(Address address) {
         if (address == null){
-            myCountryOffset.setFloorOffsetFromCountry("--");
             Address newAddress = new Address(new Locale("--"));
             newAddress.setLocality("--");
             newAddress.setCountryName("--");
-
             myCountryOffset.setAddress(newAddress);
+            myCountryOffset.setFloorOffsetFromCountry("--");
+            myCountryOffset.setNumberingConvention("--");
             addressReady = true;
         } else {
             String countryCode = address.getCountryCode();
             if (countryCode == null){
                 countryCode = "UK";
             }
-            myCountryOffset.setFloorOffsetFromCountry(countryCode);
             myCountryOffset.setAddress(address);
+            myCountryOffset.setFloorOffsetFromCountry(countryCode);
+            myCountryOffset.setNumberingConvention(countryCode);
             addressReady = true;
         }
     }
@@ -409,6 +418,34 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                 });
                 adb.show();
                 break;
+            case R.id.action_info:
+
+                String convention;
+                if (Constants.IS_AUTO_BUILDING_TYPE){
+                    convention = myCountryOffset.getNumberingConvention();
+                } else {
+                    convention = "UK";
+                }
+
+                AlertDialog.Builder adb_info =new AlertDialog.Builder(UserActivity.this);
+                adb_info.setTitle("Info");
+                adb_info.setMessage(String.format("%s %.2f hPa\n" +
+                                "%s %.2f hPa\n" +
+                                "%s %.2f m\n" +
+                                "%s %.2f m\n" +
+                                "%s %.2f m\n" +
+                                "%s %s\n" +
+                                "\n\n" +
+                                "%s\n" +
+                                "%s\n" +
+                                "%s",
+                        "Current Pressure:", currPressure, "Sea Level Pressure:", referencePressure,
+                        "Current Elevation:", userLevelAltitude, "Ground Elevation:", groundLevelAltitude,
+                        "Offset to Ground:", Constants.OFFSET_TO_GOOGLE, "Floor Numbering Convention:", convention,
+                        "Powered By Dark Sky", "Powered By Google", "Author: Montvydas Klumbys"));
+                        adb_info.setPositiveButton("Ok", null);
+                adb_info.show();
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -434,10 +471,10 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
                     Constants.MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
-        } else {
-            mLocationUpdater = new LocationUpdater(this, this);
-            mLocationUpdater.createLocationProvider();
         }
+
+        mLocationUpdater = new LocationUpdater(this, this);
+        mLocationUpdater.createLocationProvider();
     }
 
     public void initialiseSensors (){
@@ -461,7 +498,8 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onStart() {
         super.onStart();
-        mLocationUpdater.connectLocationProvider();
+        if (mLocationUpdater != null)
+            mLocationUpdater.connectLocationProvider();
     }
 
     @Override
@@ -478,8 +516,8 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         if (!getOffsetCheck()){
             AlertDialog.Builder adb=new AlertDialog.Builder(UserActivity.this);
             adb.setTitle("Welcome!");
-            adb.setMessage("As this is Your first time using the application, you need to calibrate it! Stay on the ground floor, keep the phone in a stable position and press 'OK'! Don't worry, you can always re-calibrate it afterwards!");
-            adb.setPositiveButton("Ok", new AlertDialog.OnClickListener() {
+            adb.setMessage("As this is Your first time using the application, you need to calibrate it! Stay on the ground floor, keep the phone in a stable position and press 'Calibrate'! Don't worry, you can always re-calibrate it afterwards!");
+            adb.setPositiveButton("Calibrate", new AlertDialog.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     //deleting everything means clearing all of the lists
                     isSavingGoogleOffset = true;
@@ -495,6 +533,7 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         Constants.AUTO_UPDATE_INTERVAL = Integer.parseInt(prefs.getString(SettingsFragment.KEY_AUTO_UPDATE_INTERVAL, "60"));
         Constants.IS_AUTO_UPDATE_RUNNING = prefs.getBoolean(SettingsFragment.KEY_AUTO_UPDATE_CHECK, true);
         Constants.REFERENCE_TYPE = Integer.parseInt(prefs.getString(SettingsFragment.KEY_REF_TYPE, "0"));
+        Constants.IS_AUTO_BUILDING_TYPE = prefs.getBoolean(SettingsFragment.KEY_BUILDING_TYPE, true);
 
         INTERVAL = 1000 * Constants.AUTO_UPDATE_INTERVAL;
         if (Constants.IS_AUTO_UPDATE_RUNNING) {
