@@ -1,9 +1,25 @@
-# TangoPositioning
+# Floor Finder Application
 
 ##Intro
-I am a Univeristy of Edinburgh Electronics Students and I share my Master's project contents in here. The project is 
-based around Google Tango device. Currently in the release there is [Google Tango Tablet] (https://store.google.com/product/project_tango_tablet_development_kit) and Lenovo Cosumer 
-SmartPhone [Phab 2 Pro] (http://shop.lenovo.com/gb/en/tango/). 
+I am a Univeristy of Edinburgh Electronics Students and I share my Masters project contents in here. An algorithm was implemented within an Android application, which would combine several sources of data to give the floor level at which the user is. The application requires GPS, a barometer sensor and an Internet connectivity.
 
-The aim of the project is to create an Indoor Positioning system based on main Vision and some other sensors.
+Using the App:
+* The first time the application is opened you need to calibrate the ground floor level. Stand somewhere on the ground and hold the phone in a position. Press Calibrate!
+* To update readings and your location press inside the red circle. Floor changes should be detected in real time.
+
+APIs used:
+* Forecast.io also known as Dark Sky 
+* Google Elevation service
+* Google Geodecoder class
+* SparkFun Data (phant.io)
+
+
+Features:
+* Works in any building anywhere in the world. HOWEVER, due to recent modifications in Dark Sky API it will ONLY work in Edinburgh city, where a custom weather station is implemented to give accurate pressure readings. In the future the app will be fixed to work everywhere.
+* Shows received Google Elevation, current pressure and reference pressure.
+* Allows to make automatic updates every defined amount of time.
+* Allows to adjust the floor numbering convention depending on the country the user is in.
+
+University of Edinburgh
+School of Engineering
 
