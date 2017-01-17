@@ -17,6 +17,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:weightSum="2">
 
         <Button
@@ -29,7 +30,7 @@
             android:layout_marginLeft="5dp"
             android:background="#991F39"
             android:textColor="#FFFFFF"
-            android:text="Push Data!" />
+            android:text="Push Now!" />
 
         <Switch
             android:layout_width="wrap_content"
@@ -44,16 +45,65 @@
             android:id="@+id/switch1" />
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/phone"
-        android:layout_width="100dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint=""
-        android:text="60"
-        android:textSize="30sp"
-        android:paddingTop="100dp"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:inputType="number|phone"
-        android:digits="1234567890"/>
+        android:paddingTop="20dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Offset (hPa):"
+            android:textSize="20sp"
+            android:layout_gravity="center"
+            />
+
+        <EditText
+            android:id="@+id/offset_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint=""
+            android:text="9.64"
+            android:textSize="30sp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:inputType="number|phone"
+            android:digits="1234567890."
+            android:layout_weight="1"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="20dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Update rate (s):"
+            android:textSize="20sp"
+            android:layout_gravity="center"
+            />
+
+        <EditText
+            android:id="@+id/update_rate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint=""
+            android:text="60"
+            android:textSize="30sp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:inputType="number|phone"
+            android:digits="1234567890"
+            android:layout_weight="1"/>
+    </LinearLayout>
+
+
 </LinearLayout>
