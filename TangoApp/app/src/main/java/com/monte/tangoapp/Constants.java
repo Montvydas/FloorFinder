@@ -59,6 +59,16 @@ public class Constants {
         return new String[] {baseAddress + "output/" + apiKey + ".json?gt[time]=" + String.valueOf(unixTime)};
     }
 
+    public static final String BASE_URL_THINGSPEAK= "https://api.thingspeak.com/";
+    public static final String CHANNEL_THINGSPEAK= "116015";
+    public static final String API_KEY_PUBLIC_THINGSPEAK = "***REMOVED***";
+
+    public static String[] getThingSpeakPullUrl (String baseAddress, String apiKey, String channelID){
+        return new String[] {baseAddress + "channels/" + channelID + "/feeds/last.json?api_key=" + apiKey};
+    }
+
+//    https://api.thingspeak.com/channels/116015/feeds/last.json?api_key=SN8VGR8P61B3OJUT
+
     /**
      * Constructs a link to make a query to OpenWeather API.
      * Queries require different ways of specifying the request link

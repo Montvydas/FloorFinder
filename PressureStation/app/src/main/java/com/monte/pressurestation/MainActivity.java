@@ -10,6 +10,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.LocationListener;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -113,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return super.onOptionsItemSelected(item);
     }
 
-    private String BASE_URL_SPARK_= "http://data.sparkfun.com/";
+    private String BASE_URL_SPARK= "http://data.sparkfun.com/";
     private  String API_KEY_PUBLIC_SPARK = "***REMOVED***";
     private String API_KEY_PRIVATE_SPARK = "***REMOVED***";
 
@@ -121,6 +123,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         long unixTime = System.currentTimeMillis() / 1000L;
         return new String[] {baseAddress + "input/" + apiPublicKey + ".json?private_key=" + apiPrivateKey +
                 "&location=" + "edinburgh" + "&pressure=" + String.format("%.3f", pressure) + "&time=" + unixTime};
+    }
+
+    private String BASE_URL_THINGSPEAK= "https://api.thingspeak.com/";
+    private String API_KEY_PRIVATE_THINGSPEAK = "SN8VGR8P61B3OJUT";
+
+    private String[] getThingSpeakPushUrl (String baseAddress, String apiPrivateKey, float pressure){
+        long unixTime = System.currentTimeMillis() / 1000L;
+        return new String[] {baseAddress + "update?api_key=" + apiPrivateKey + "&field1=" + "edinburgh" +
+                "&field2=" + String.format("%.3f", pressure) + "&field3=" + unixTime};
     }
 
 
@@ -162,6 +173,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private final float filterSmooth = 0.2f;
     private float millibars_of_pressure = 1013.25f;
+    private float sea_level_pressure = 1013.25f;
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -169,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case Sensor.TYPE_PRESSURE:  //if it was pressure, get the pressure value
                 float currPressure = event.values[0]*filterSmooth + millibars_of_pressure*(1-filterSmooth);
                 millibars_of_pressure = currPressure;
+                sea_level_pressure = currPressure + 9.64f;
         }
     }
 
@@ -179,9 +192,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     public void pushDataButton (View v){
-        JSONSparkFunPushTask sparkTaskPush = new JSONSparkFunPushTask();
-        String[] link = getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure);
-        sparkTaskPush.execute(link);
+        if (checkConnectivity()) {
+            new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, sea_level_pressure));
+            new JSONThingSpeakPushTask().execute(getThingSpeakPushUrl(BASE_URL_THINGSPEAK, API_KEY_PRIVATE_THINGSPEAK, sea_level_pressure));
+        }
+
     }
 
     public class MyAlarmReceiver extends WakefulBroadcastReceiver {
@@ -192,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //        context.startService(background);
             Log.e("SimpleWakefulReceiver", "" + System.currentTimeMillis());
 //            JSONSparkFunPushTask sparkTaskPush = new JSONSparkFunPushTask();
-//            sparkTaskPush.execute(getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure));
+//            sparkTaskPush.execute(getSparkFunPushUrl(BASE_URL_SPARK, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, sea_level_pressure));
 //            Log.i("SimpleWakefulReceiver", "" + System.currentTimeMillis());
         }
     }
@@ -221,9 +236,36 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             } else {
                 Log.e("sparkPush", "status=" + sparkFunPostStatus.isStatus() + " message=" + sparkFunPostStatus.getMessage());
             }
+        }
+    }
 
-//            for (SparkFunWeather sparkFunWeather: sparkFunWeatherList) {
-//                Log.e("spark", sparkFunWeather.getLocation() + " " + sparkFunWeather.getPressureGroundLevel() + " " + sparkFunWeather.getUnixTime());
+    private class JSONThingSpeakPushTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            //data is received as a json string from the requested website
+            Log.e("link", params[0]);
+            String data = ((new HttpClientQuery()).getQueryResult(params[0]));
+//            Log.e("data", data);
+//            Integer status = null;
+//            try {
+//                status = Integer.parseInt(data);
+//            } catch (NumberFormatException e){
+//                e.printStackTrace();
+//            }
+            //returns the received elevation object
+            return data;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            Log.e("data", "thingspeak posted!");
+
+//            if (result == null){
+//                Log.e("thingspeak", "failed to post the message!");
+//            } else {
+//                Log.e("thingspeak", "success! Nr. " + result);
 //            }
         }
     }
@@ -235,7 +277,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     {
         @Override
         public void run() {
-            new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK_, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, millibars_of_pressure));
+            if (checkConnectivity()){
+                new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, sea_level_pressure));
+                new JSONThingSpeakPushTask().execute(getThingSpeakPushUrl(BASE_URL_THINGSPEAK, API_KEY_PRIVATE_THINGSPEAK, sea_level_pressure));
+            }
             mHandler.postDelayed(mHandlerTask, INTERVAL);
         }
     };
@@ -256,5 +301,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
+    }
+
+    private boolean checkConnectivity (){
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+        if (!isConnected){
+            Toast.makeText(this, "Could not access the Server! Check Connectivity!", Toast.LENGTH_SHORT).show();
+        }
+        return isConnected;
     }
 }

@@ -37,16 +37,19 @@ import android.widget.Toast;
 
 import com.monte.tangoapp.model.Elevation;
 import com.monte.tangoapp.model.SparkFunWeather;
+import com.monte.tangoapp.model.ThingSpeakWeather;
 import com.monte.tangoapp.model.Weather;
 import com.monte.tangoapp.tasks.AddressTask;
 import com.monte.tangoapp.tasks.AddressTaskListener;
 import com.monte.tangoapp.tasks.ElevationTaskListener;
 import com.monte.tangoapp.tasks.JSONElevationTask;
 import com.monte.tangoapp.tasks.JSONSparkFunPullTask;
+import com.monte.tangoapp.tasks.JSONThingSpeakPullTask;
 import com.monte.tangoapp.tasks.JSONWeatherTask;
 import com.monte.tangoapp.tasks.LocationTaskListener;
 import com.monte.tangoapp.tasks.MyProgressRunner;
 import com.monte.tangoapp.tasks.SparkFunTaskListener;
+import com.monte.tangoapp.tasks.ThingSpeakTaskListener;
 import com.monte.tangoapp.tasks.WeatherTaskListener;
 
 import java.util.List;
@@ -56,7 +59,7 @@ import java.util.Locale;
  * Created by monte on 04/01/2017.
  */
 public class UserActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener,
-        ElevationTaskListener, LocationTaskListener, SparkFunTaskListener, WeatherTaskListener, AddressTaskListener {
+        ElevationTaskListener, LocationTaskListener, WeatherTaskListener, AddressTaskListener, ThingSpeakTaskListener, SparkFunTaskListener {
     //latitude and longitude of the device; Initially set to the Main Library of the University of Edinburgh location
     //as the final test will be performed in there;
     private double lat = 55.942680;
@@ -299,6 +302,35 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    @Override
+    public void onThingSpeakUpdated(ThingSpeakWeather thingSpeakWeather) {
+        if (thingSpeakWeather == null){
+            if (checkConnectivity()) {
+                Toast.makeText(this, "Error while accessing SparkFun servers, trying again...", Toast.LENGTH_SHORT).show();
+                new JSONThingSpeakPullTask(this).execute(Constants.getThingSpeakPullUrl(Constants.BASE_URL_THINGSPEAK, Constants.API_KEY_PUBLIC_THINGSPEAK, Constants.CHANNEL_THINGSPEAK));
+            } else {
+                Toast.makeText(this, "No internet connectivity...", Toast.LENGTH_SHORT).show();
+                referencePressure = SensorManager.PRESSURE_STANDARD_ATMOSPHERE;
+                actualReferenceUsed = 0;
+                pressureReferenceReady = true;
+
+            }
+        } else {
+            long unixTime = System.currentTimeMillis() / 1000L - 600;   //10min before data
+            if (thingSpeakWeather.getUnixTime() > unixTime) {
+                referencePressure = thingSpeakWeather.getPressureGroundLevel();
+                actualReferenceUsed = 2;
+                pressureReferenceReady = true;
+            } else {
+                //make a query to Forecast.io to receive weather
+                Toast.makeText(this, "No data in the past 10min from SparkFun! Forecast.io Sea Level used!", Toast.LENGTH_SHORT).show();
+                JSONWeatherTask forecastTask = new JSONWeatherTask(this);
+                forecastTask.execute(Constants.getForecastUrl(Constants.BASE_URL_FORECAST,
+                        Constants.API_KEY_FORECAST, lat, lon));
+            }
+        }
+    }
+
     private double groundLevelAltitude = 0.0;
     @Override
     public void onElevationUpdated (Elevation elevation){
@@ -349,10 +381,13 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
                 new JSONWeatherTask(this).execute(Constants.getForecastUrl(Constants.BASE_URL_FORECAST, Constants.API_KEY_FORECAST, lat, lon));
             } else {
                 //use custom edinburgh station
-                new JSONSparkFunPullTask(this).execute(Constants.getSparkFunPullUrl(Constants.BASE_URL_SPARK_, Constants.API_KEY_PUBLIC_SPARK));
+                Log.e("asda", Constants.getThingSpeakPullUrl(Constants.BASE_URL_THINGSPEAK, Constants.API_KEY_PUBLIC_THINGSPEAK, Constants.CHANNEL_THINGSPEAK)[0]);
+                new JSONThingSpeakPullTask(this).execute(Constants.getThingSpeakPullUrl(Constants.BASE_URL_THINGSPEAK, Constants.API_KEY_PUBLIC_THINGSPEAK, Constants.CHANNEL_THINGSPEAK));
+//                new JSONSparkFunPullTask(this).execute(Constants.getSparkFunPullUrl(Constants.BASE_URL_SPARK_, Constants.API_KEY_PUBLIC_SPARK));
             }
         } else if (Constants.REFERENCE_TYPE == 1){  //edinburgh station
-            new JSONSparkFunPullTask(this).execute(Constants.getSparkFunPullUrl(Constants.BASE_URL_SPARK_, Constants.API_KEY_PUBLIC_SPARK));
+            new JSONThingSpeakPullTask(this).execute(Constants.getThingSpeakPullUrl(Constants.BASE_URL_THINGSPEAK, Constants.API_KEY_PUBLIC_THINGSPEAK, Constants.CHANNEL_THINGSPEAK));
+//            new JSONSparkFunPullTask(this).execute(Constants.getSparkFunPullUrl(Constants.BASE_URL_SPARK_, Constants.API_KEY_PUBLIC_SPARK));
         } else if (Constants.REFERENCE_TYPE == 2){  //forecast
             new JSONWeatherTask(this).execute(Constants.getForecastUrl(Constants.BASE_URL_FORECAST, Constants.API_KEY_FORECAST, lat, lon));
         } else if (Constants.REFERENCE_TYPE == 3) {  //default sea pressure

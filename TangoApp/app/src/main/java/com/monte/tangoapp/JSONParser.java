@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import com.monte.tangoapp.model.Elevation;
 import com.monte.tangoapp.model.SparkFunPostStatus;
 import com.monte.tangoapp.model.SparkFunWeather;
+import com.monte.tangoapp.model.ThingSpeakWeather;
 import com.monte.tangoapp.model.Weather;
 
 import java.util.ArrayList;
@@ -103,6 +104,23 @@ public class JSONParser {
         return status;
     }
 
+    public static ThingSpeakWeather getThingerSpeakWeatherResults (String data) throws JSONException{
+        if (data == null){
+            return null;
+        }
+
+        ThingSpeakWeather weather = new ThingSpeakWeather();
+        if (data.equals(null))
+            return weather;
+
+        JSONObject jObj = new JSONObject(data);
+        weather.setEntryId(getString("entry_id", jObj));
+        weather.setLocation(getString("field1", jObj));
+        weather.setPressureGroundLevel(getFloat("field2", jObj));
+        weather.setUnixTime(getLong("field3", jObj));
+
+        return weather;
+    }
 
     private static JSONObject getObject(String tagName, JSONObject jObj)  throws JSONException {
         JSONObject subObj = jObj.getJSONObject(tagName);
