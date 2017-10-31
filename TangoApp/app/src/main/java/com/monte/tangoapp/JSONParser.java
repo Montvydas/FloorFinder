@@ -115,6 +115,7 @@ public class JSONParser {
 
         JSONObject jObj = new JSONObject(data);
         weather.setEntryId(getString("entry_id", jObj));
+        weather.setCreatedAt(getString("created_at", jObj));
         weather.setLocation(getString("field1", jObj));
         weather.setPressureGroundLevel(getFloat("field2", jObj));
         weather.setUnixTime(getLong("field3", jObj));

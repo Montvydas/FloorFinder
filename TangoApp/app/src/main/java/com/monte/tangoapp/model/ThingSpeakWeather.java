@@ -8,6 +8,7 @@ public class ThingSpeakWeather {
     private long unixTime;          //and unix time, when the weather was updated
     private String location;
     private String entryId;
+    private String createdAt;
 
     //getters and setters are used specify the data when json is extracted and then
     //use it within the application
@@ -37,5 +38,13 @@ public class ThingSpeakWeather {
 
     public void setEntryId(String entryId) {
         this.entryId = entryId;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
     }
 }

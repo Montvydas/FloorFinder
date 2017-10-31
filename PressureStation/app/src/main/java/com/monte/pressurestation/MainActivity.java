@@ -9,16 +9,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.LocationListener;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -30,11 +25,6 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import org.json.JSONException;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private SensorManager sensorManager;
@@ -125,8 +115,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 "&location=" + "edinburgh" + "&pressure=" + String.format("%.3f", pressure) + "&time=" + unixTime};
     }
 
-    private String BASE_URL_THINGSPEAK= "https://api.thingspeak.com/";
-    private String API_KEY_PRIVATE_THINGSPEAK = "SN8VGR8P61B3OJUT";
+    private String BASE_URL_THINGSPEAK = "https://api.thingspeak.com/";
+    private String API_KEY_PRIVATE_THINGSPEAK = "***REMOVED***";
 
     private String[] getThingSpeakPushUrl (String baseAddress, String apiPrivateKey, float pressure){
         long unixTime = System.currentTimeMillis() / 1000L;
@@ -193,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     public void pushDataButton (View v){
         if (checkConnectivity()) {
-            new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, sea_level_pressure));
+//            new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, sea_level_pressure));
             new JSONThingSpeakPushTask().execute(getThingSpeakPushUrl(BASE_URL_THINGSPEAK, API_KEY_PRIVATE_THINGSPEAK, sea_level_pressure));
         }
 
@@ -278,7 +268,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         @Override
         public void run() {
             if (checkConnectivity()){
-                new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, sea_level_pressure));
+//                new JSONSparkFunPushTask().execute(getSparkFunPushUrl(BASE_URL_SPARK, API_KEY_PUBLIC_SPARK, API_KEY_PRIVATE_SPARK, sea_level_pressure));
                 new JSONThingSpeakPushTask().execute(getThingSpeakPushUrl(BASE_URL_THINGSPEAK, API_KEY_PRIVATE_THINGSPEAK, sea_level_pressure));
             }
             mHandler.postDelayed(mHandlerTask, INTERVAL);

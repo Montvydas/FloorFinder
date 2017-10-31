@@ -412,6 +412,10 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         return (int) Math.round(0.3013 * dH - 0.1071);
     }
 
+    private float getAltitudeFromFloor(int floor){
+        return (floor + 0.1071f) / 0.3013f;
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
