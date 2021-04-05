@@ -106,8 +106,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private String BASE_URL_SPARK= "http://data.sparkfun.com/";
-    private  String API_KEY_PUBLIC_SPARK = "***REMOVED***";
-    private String API_KEY_PRIVATE_SPARK = "***REMOVED***";
+    private  String API_KEY_PUBLIC_SPARK = "SPARK_PUBLIC_API_KEY";
+    private String API_KEY_PRIVATE_SPARK = "SPARK_PRIVATE_API_KEY";
 
     private String[] getSparkFunPushUrl (String baseAddress, String apiPublicKey, String apiPrivateKey, float pressure){
         long unixTime = System.currentTimeMillis() / 1000L;
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private String BASE_URL_THINGSPEAK = "https://api.thingspeak.com/";
-    private String API_KEY_PRIVATE_THINGSPEAK = "***REMOVED***";
+    private String API_KEY_PRIVATE_THINGSPEAK = "THINGSPEAK_API_KEY";
 
     private String[] getThingSpeakPushUrl (String baseAddress, String apiPrivateKey, float pressure){
         long unixTime = System.currentTimeMillis() / 1000L;
