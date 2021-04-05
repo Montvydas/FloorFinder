@@ -37,20 +37,20 @@ public class Constants {
     //Different API base addresses and keys, which will be used to built the full request address
     //Open weather API info; no longer used, but given for informative purposes
     public static final String BASE_URL_OPEN_WEATHER_MAP = "http://api.openweathermap.org/data/2.5/weather?";
-    public static final String API_KEY_OPEN_WEATHER_MAP = "***REMOVED***";
+    public static final String API_KEY_OPEN_WEATHER_MAP = "OPEN_WEATHER_API_KEY";
 
     //Google elevation API info;
     public static final String BASE_URL_GOOGLE_ELEVATION = "https://maps.googleapis.com/maps/api/elevation/json?";
-    public static final String API_KEY_GOOGLE_ELEVATION = "***REMOVED***";
+    public static final String API_KEY_GOOGLE_ELEVATION = "GOOGLE_ELEVATION_API_KEY";
 
     //Forecast.io API info;
     public static final String BASE_URL_FORECAST = "https://api.forecast.io/forecast/";
-    public static final String API_KEY_FORECAST = "***REMOVED***";
+    public static final String API_KEY_FORECAST = "FORECAST_API_KEY";
 
 
     public static final String BASE_URL_SPARK_= "http://data.sparkfun.com/";
-    public static final String API_KEY_PUBLIC_SPARK = "***REMOVED***";
-    public static final String API_KEY_PRIVATE_SPARK = "***REMOVED***";
+    public static final String API_KEY_PUBLIC_SPARK = "SPARKFUN_PUBLIC_API_KEY";
+    public static final String API_KEY_PRIVATE_SPARK = "SPARKFUN_PRIVATE_API_KEY";
 
 
     public static String[] getSparkFunPullUrl (String baseAddress, String apiKey){
@@ -61,7 +61,7 @@ public class Constants {
 
     public static final String BASE_URL_THINGSPEAK= "https://api.thingspeak.com/";
     public static final String CHANNEL_THINGSPEAK= "116015";
-    public static final String API_KEY_PUBLIC_THINGSPEAK = "***REMOVED***";
+    public static final String API_KEY_PUBLIC_THINGSPEAK = "THINGSPEAK_PUBLIC_API_KEY";
 
     public static String[] getThingSpeakPullUrl (String baseAddress, String apiKey, String channelID){
         return new String[] {baseAddress + "channels/" + channelID + "/feeds/last.json?api_key=" + apiKey};

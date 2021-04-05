@@ -112,15 +112,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //Different API base addresses and keys, which will be used to built the full request address
     //Open weather API info; no longer used, but given for informative purposes
     private static String BASE_URL_OPEN_WEATHER_MAP = "http://api.openweathermap.org/data/2.5/weather?";
-    private String API_KEY_OPEN_WEATHER_MAP = "***REMOVED***";
+    private String API_KEY_OPEN_WEATHER_MAP = "OPEN_WEATHER_API_KEY";
 
     //Google elevation API info;
     private String BASE_URL_GOOGLE_ELEVATION = "https://maps.googleapis.com/maps/api/elevation/json?";
-    private String API_KEY_GOOGLE_ELEVATION = "***REMOVED***";
+    private String API_KEY_GOOGLE_ELEVATION = "GOOGLE_ELEVATION_API_KEY";
 
     //Forecast.io API info;
     private String BASE_URL_FORECAST = "https://api.forecast.io/forecast/";
-    private String API_KEY_FORECAST = "***REMOVED***";
+    private String API_KEY_FORECAST = "FORECAST_API_KEY";
 
     //latitude and longitude of the device; Initially set to the Main Library of the University of Edinburgh location
     //as the final test will be performed in there;
@@ -240,8 +240,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private String BASE_URL_SPARK_= "https://data.sparkfun.com/";
-    private  String API_KEY_PUBLIC_SPARK = "***REMOVED***";
-    private String API_KEY_PRIVATE_SPARK = "***REMOVED***";
+    private  String API_KEY_PUBLIC_SPARK = "SPARKFUN_PUBLIC_API_KEY";
+    private String API_KEY_PRIVATE_SPARK = "SPARKFUN_PRIVATE_API_KEY";
     private String[] getSparkFunPullUrl (String baseAddress, String apiKey){
         long time = 1482074058;
         long unixTime = System.currentTimeMillis() / 1000L - 600;   //10min before data
